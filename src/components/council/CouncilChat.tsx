@@ -11,6 +11,7 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
   analysis: "Analyzing requirements",
   council:  "Council in debate",
   conflict: "Resolving conflict",
+  voting:   "Agents voting",
   decision: "CEO is deciding",
   output:   "Generating deliverables",
   complete: "Session complete",
@@ -25,7 +26,8 @@ const SPEAKING_ORDER = [
 ];
 
 function getTypingAgent(phase: CouncilPhase, messageCount: number) {
-  if (phase === "idle" || phase === "output" || phase === "complete") return null;
+  // voting phase: voting UI is in the right panel; suppress chat typing indicator
+  if (phase === "idle" || phase === "voting" || phase === "output" || phase === "complete") return null;
   if (messageCount >= SPEAKING_ORDER.length) return null;
   return SPEAKING_ORDER[messageCount];
 }

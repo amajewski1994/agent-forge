@@ -18,6 +18,7 @@ const PHASE_LABEL: Record<CouncilPhase, string> = {
   analysis: "Analyzing...",
   council:  "In council...",
   conflict: "Resolving conflict...",
+  voting:   "Agents voting...",
   decision: "Deciding...",
   output:   "Generating output...",
   complete: "Start Council",

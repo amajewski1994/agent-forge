@@ -8,6 +8,7 @@ const PHASE_LABEL: Record<CouncilPhase, string> = {
   analysis: "Phase: Analysis",
   council:  "Phase: Discussion",
   conflict: "Phase: Resolution",
+  voting:   "Phase: Voting",
   decision: "Phase: Decision",
   output:   "Phase: Output",
   complete: "Session complete",

@@ -7,11 +7,15 @@ import DecisionCard from "./DecisionCard";
 import OutputCard from "./OutputCard";
 import ReportPreviewModal from "./ReportPreviewModal";
 import SectionHeader from "./SectionHeader";
+import VoteCard from "./VoteCard";
 
 export default function DecisionPanel() {
-  const { decisions, conflicts, outputItems, phase } = useCouncilSim();
+  const { decisions, conflicts, votes, voteOptions, outputItems, phase } = useCouncilSim();
   const readyCount = outputItems.filter((i) => i.ready).length;
   const [showReport, setShowReport] = useState(false);
+
+  const showVoting = voteOptions.length > 0 && conflicts.length > 0 &&
+    (phase === "voting" || votes.length > 0);
 
   return (
     <aside className="flex flex-col overflow-hidden">
@@ -20,19 +24,8 @@ export default function DecisionPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
-        <section>
-          <SectionHeader title="Decisions" count={decisions.length || undefined} />
-          {decisions.length === 0 ? (
-            <p className="text-[10px] text-slate-800 px-0.5">Waiting for council...</p>
-          ) : (
-            <div className="space-y-1.5">
-              {decisions.map((decision, i) => (
-                <DecisionCard key={decision.id} decision={decision} delay={i * 80} />
-              ))}
-            </div>
-          )}
-        </section>
 
+        {/* Conflicts */}
         <section>
           <SectionHeader title="Conflicts" count={conflicts.length || undefined} />
           {conflicts.length === 0 ? (
@@ -46,6 +39,34 @@ export default function DecisionPanel() {
           )}
         </section>
 
+        {/* Voting */}
+        {showVoting && (
+          <section>
+            <SectionHeader title="Voting" count={votes.length} total={4} />
+            <VoteCard
+              conflict={conflicts[0]}
+              options={voteOptions}
+              votes={votes}
+              phase={phase}
+            />
+          </section>
+        )}
+
+        {/* Decisions */}
+        <section>
+          <SectionHeader title="Decisions" count={decisions.length || undefined} />
+          {decisions.length === 0 ? (
+            <p className="text-[10px] text-slate-800 px-0.5">Waiting for council...</p>
+          ) : (
+            <div className="space-y-1.5">
+              {decisions.map((decision, i) => (
+                <DecisionCard key={decision.id} decision={decision} delay={i * 80} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Final Output */}
         <section>
           <SectionHeader
             title="Final Output"
@@ -59,6 +80,7 @@ export default function DecisionPanel() {
           </div>
         </section>
 
+        {/* Preview Report — appears when session is complete */}
         {phase === "complete" && (
           <div className="animate-slide-up">
             <button
