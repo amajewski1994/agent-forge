@@ -23,8 +23,8 @@ export default function DecisionPanel() {
             <p className="text-[10px] text-slate-800 px-0.5">Waiting for council...</p>
           ) : (
             <div className="space-y-1.5">
-              {decisions.map((decision) => (
-                <DecisionCard key={decision.id} decision={decision} />
+              {decisions.map((decision, i) => (
+                <DecisionCard key={decision.id} decision={decision} delay={i * 80} />
               ))}
             </div>
           )}

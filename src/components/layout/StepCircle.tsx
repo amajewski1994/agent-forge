@@ -12,7 +12,7 @@ export default function StepCircle({ step }: StepCircleProps) {
   return (
     <div
       className={[
-        "rounded-full border-2 flex items-center justify-center",
+        "rounded-full border-2 flex items-center justify-center transition-all duration-300",
         isActive ? "w-6 h-6" : "w-5 h-5",
         style.circle,
       ].join(" ")}

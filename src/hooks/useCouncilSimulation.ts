@@ -118,41 +118,41 @@ export function useCouncilSimulation(): CouncilSimState {
     setConflicts([]);
     setOutputItems(OUTPUT_ITEMS_BASE);
 
-    // 2s — PM speaks
+    // 2s — PM speaks (typing indicator visible since 0s)
     schedule(() => {
       setMessages([{ ...SIM_MESSAGES[0], timestamp: nowTime() }]);
     }, 2000);
 
-    // 4s — council begins, CTO speaks
+    // 4.5s — council begins, CTO speaks (2.5s CTO typing)
     schedule(() => {
       setPhase("council");
       setMessages(prev => [...prev, { ...SIM_MESSAGES[1], timestamp: nowTime() }]);
-    }, 4000);
+    }, 4500);
 
-    // 6s — Designer speaks
+    // 7s — Designer speaks (2.5s DES typing)
     schedule(() => {
       setMessages(prev => [...prev, { ...SIM_MESSAGES[2], timestamp: nowTime() }]);
-    }, 6000);
+    }, 7000);
 
-    // 8s — QA speaks
+    // 9.5s — QA speaks (2.5s QA typing)
     schedule(() => {
       setMessages(prev => [...prev, { ...SIM_MESSAGES[3], timestamp: nowTime() }]);
-    }, 8000);
+    }, 9500);
 
-    // 10s — conflict detected
+    // 11s — conflict detected (CEO typing still visible, conflict adds tension)
     schedule(() => {
       setPhase("conflict");
       setConflicts([SIM_CONFLICT]);
-    }, 10000);
+    }, 11000);
 
-    // 12s — CEO resolves, decisions populated
+    // 13.5s — CEO resolves after deliberate pause (2.5s CEO thinking under conflict)
     schedule(() => {
       setPhase("decision");
       setMessages(prev => [...prev, { ...SIM_MESSAGES[4], timestamp: nowTime() }]);
       setDecisions(SIM_DECISIONS);
-    }, 12000);
+    }, 13500);
 
-    // 14s — output generation begins; mark items ready one by one
+    // 15s — output generation begins
     schedule(() => {
       setPhase("output");
       OUTPUT_ITEMS_BASE.forEach((_, idx) => {
@@ -160,13 +160,13 @@ export function useCouncilSimulation(): CouncilSimState {
           () => setOutputItems(prev =>
             prev.map((item, i) => (i === idx ? { ...item, ready: true } : item))
           ),
-          idx * 300,
+          idx * 500,
         );
       });
-    }, 14000);
+    }, 15000);
 
-    // 18s — session complete
-    schedule(() => setPhase("complete"), 18000);
+    // 20s — session complete (15s + 8 × 500ms + 1s buffer)
+    schedule(() => setPhase("complete"), 20000);
   }, []); // timers ref and state setters are both stable
 
   return {

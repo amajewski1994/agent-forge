@@ -32,14 +32,14 @@ export default function WorkflowStepItem({ step, nextStatus, isLast }: WorkflowS
       <div className="flex flex-col items-center gap-1.5 shrink-0">
         <StepCircle step={step} />
         <div className="text-center">
-          <p className={`text-xs font-semibold leading-none ${style.label}`}>{step.label}</p>
-          <p className={`text-[10px] leading-none mt-0.5 ${sublabelClass(step.status)}`}>
+          <p className={`text-xs font-semibold leading-none transition-colors duration-300 ${style.label}`}>{step.label}</p>
+          <p className={`text-[10px] leading-none mt-0.5 transition-colors duration-300 ${sublabelClass(step.status)}`}>
             {step.sublabel}
           </p>
         </div>
       </div>
       {!isLast && (
-        <div className={`flex-1 h-px mx-2 mb-4 ${connectorClass(step.status, nextStatus)}`} />
+        <div className={`flex-1 h-px mx-2 mb-4 transition-all duration-500 ${connectorClass(step.status, nextStatus)}`} />
       )}
     </div>
   );

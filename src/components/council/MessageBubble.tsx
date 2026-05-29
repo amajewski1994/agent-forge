@@ -16,7 +16,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const isDecision = message.type === "decision";
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 animate-slide-up">
       <AgentMessageAvatar agentAbbr={message.agentAbbr} large={isDecision} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">

@@ -6,7 +6,7 @@ interface ConflictCardProps {
 
 export default function ConflictCard({ conflict }: ConflictCardProps) {
   return (
-    <div className="rounded-xl bg-amber-950/20 border border-amber-500/20 overflow-hidden">
+    <div className="rounded-xl bg-amber-950/20 border border-amber-500/20 overflow-hidden animate-slide-up">
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-2">
         <svg className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path

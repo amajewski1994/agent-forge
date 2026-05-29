@@ -9,7 +9,7 @@ interface TypingIndicatorProps {
 export default function TypingIndicator({ agentAbbr, agentRole }: TypingIndicatorProps) {
   const style = AGENT_STYLE_MAP[agentAbbr] ?? FALLBACK_STYLE;
   return (
-    <div className="flex gap-3 items-start">
+    <div className="flex gap-3 items-start animate-fade-in">
       <AgentMessageAvatar agentAbbr={agentAbbr} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
