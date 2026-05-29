@@ -1,15 +1,34 @@
+"use client";
+
+import { useCouncilSim } from "@/context/CouncilSimContext";
+import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
+
+const PHASE_LABEL: Record<CouncilPhase, string> = {
+  idle:     "Ready to start",
+  analysis: "Phase: Analysis",
+  council:  "Phase: Discussion",
+  conflict: "Phase: Resolution",
+  decision: "Phase: Decision",
+  output:   "Phase: Output",
+  complete: "Session complete",
+};
+
 export default function ActiveSessionCard() {
+  const { phase, isRunning } = useCouncilSim();
+
   return (
     <div className="rounded-xl bg-slate-900/80 border border-slate-800/50 overflow-hidden">
       <div className="px-3 pt-2.5 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-200 truncate">Healthcare MVP Council</p>
-            <p className="text-[10px] text-slate-600 mt-0.5">Round 1 of 3</p>
+            <p className="text-xs font-semibold text-slate-200 truncate">Product Strategy Session</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">{PHASE_LABEL[phase]}</p>
           </div>
           <div className="shrink-0 flex items-center gap-1 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wide">Live</span>
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors ${isRunning ? "bg-indigo-400 animate-pulse" : "bg-slate-600"}`} />
+            <span className={`text-[9px] font-bold uppercase tracking-wide transition-colors ${isRunning ? "text-indigo-400" : "text-slate-600"}`}>
+              {isRunning ? "Live" : "Idle"}
+            </span>
           </div>
         </div>
       </div>

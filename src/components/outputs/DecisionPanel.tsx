@@ -1,13 +1,13 @@
 "use client";
 
-import { useCouncil } from "@/hooks/useCouncil";
+import { useCouncilSim } from "@/context/CouncilSimContext";
 import ConflictCard from "./ConflictCard";
 import DecisionCard from "./DecisionCard";
 import OutputCard from "./OutputCard";
 import SectionHeader from "./SectionHeader";
 
 export default function DecisionPanel() {
-  const { decisions, conflicts, outputItems } = useCouncil();
+  const { decisions, conflicts, outputItems } = useCouncilSim();
   const readyCount = outputItems.filter((i) => i.ready).length;
 
   return (
@@ -18,25 +18,37 @@ export default function DecisionPanel() {
 
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
         <section>
-          <SectionHeader title="Decisions" count={decisions.length} />
-          <div className="space-y-1.5">
-            {decisions.map((decision) => (
-              <DecisionCard key={decision.id} decision={decision} />
-            ))}
-          </div>
+          <SectionHeader title="Decisions" count={decisions.length || undefined} />
+          {decisions.length === 0 ? (
+            <p className="text-[10px] text-slate-800 px-0.5">Waiting for council...</p>
+          ) : (
+            <div className="space-y-1.5">
+              {decisions.map((decision) => (
+                <DecisionCard key={decision.id} decision={decision} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section>
-          <SectionHeader title="Conflicts" count={conflicts.length} />
-          <div className="space-y-2">
-            {conflicts.map((conflict) => (
-              <ConflictCard key={conflict.id} conflict={conflict} />
-            ))}
-          </div>
+          <SectionHeader title="Conflicts" count={conflicts.length || undefined} />
+          {conflicts.length === 0 ? (
+            <p className="text-[10px] text-slate-800 px-0.5">None detected yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {conflicts.map((conflict) => (
+                <ConflictCard key={conflict.id} conflict={conflict} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section>
-          <SectionHeader title="Final Output" count={readyCount} total={outputItems.length} />
+          <SectionHeader
+            title="Final Output"
+            count={readyCount || undefined}
+            total={outputItems.length}
+          />
           <div className="grid grid-cols-2 gap-1.5">
             {outputItems.map((item) => (
               <OutputCard key={item.id} item={item} />

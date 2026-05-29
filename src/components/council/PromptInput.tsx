@@ -2,17 +2,36 @@
 
 import { useState } from "react";
 import { AGENTS } from "@/data/agents";
+import { useCouncilSim } from "@/context/CouncilSimContext";
+import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 
-const EXAMPLE_CHIPS = ["Doctor booking MVP", "AI fitness coach", "SaaS CRM for dentists"];
+const EXAMPLE_CHIPS = [
+  "AI fitness coach",
+  "Marketplace for tutors",
+  "SaaS CRM for dentists",
+  "Event planning platform",
+  "AI travel assistant",
+];
+
+const PHASE_LABEL: Record<CouncilPhase, string> = {
+  idle:     "Start Council",
+  analysis: "Analyzing...",
+  council:  "In council...",
+  conflict: "Resolving conflict...",
+  decision: "Deciding...",
+  output:   "Generating output...",
+  complete: "Start Council",
+};
 
 export default function PromptInput() {
   const [idea, setIdea] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
+  const { phase, start } = useCouncilSim();
+  const isRunning = phase !== "idle" && phase !== "complete";
+  const isReady = idea.trim().length > 0 && !isRunning;
 
   const handleStart = () => {
-    if (!idea.trim() || isRunning) return;
-    setIsRunning(true);
-    setTimeout(() => setIsRunning(false), 3000);
+    if (!isReady) return;
+    start();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -20,8 +39,6 @@ export default function PromptInput() {
       handleStart();
     }
   };
-
-  const isReady = idea.trim().length > 0 && !isRunning;
 
   return (
     <div className="shrink-0 p-4 border-t border-slate-800/60">
@@ -34,7 +51,8 @@ export default function PromptInput() {
                 key={chip}
                 type="button"
                 onClick={() => setIdea(chip)}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-slate-800 text-slate-600 hover:text-slate-300 hover:border-slate-700 transition-colors"
+                disabled={isRunning}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-slate-800 text-slate-600 hover:text-slate-300 hover:border-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {chip}
               </button>
@@ -49,7 +67,8 @@ export default function PromptInput() {
             onKeyDown={handleKeyDown}
             placeholder="Describe your product idea or MVP concept..."
             rows={2}
-            className="flex-1 bg-transparent text-sm text-slate-300 placeholder-slate-700 resize-none outline-none leading-relaxed"
+            disabled={isRunning}
+            className="flex-1 bg-transparent text-sm text-slate-300 placeholder-slate-700 resize-none outline-none leading-relaxed disabled:opacity-50"
           />
           <button
             onClick={handleStart}
@@ -63,7 +82,7 @@ export default function PromptInput() {
             {isRunning ? (
               <>
                 <span className="w-3 h-3 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
-                Running...
+                {PHASE_LABEL[phase]}
               </>
             ) : (
               <>
@@ -77,8 +96,16 @@ export default function PromptInput() {
         </div>
 
         <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-800/40">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-xs text-slate-700">{AGENTS.length} agents ready • Est. 2–3 min</span>
+          <div
+            className={`w-1.5 h-1.5 rounded-full transition-colors ${
+              isRunning ? "bg-indigo-500 animate-pulse" : "bg-emerald-500"
+            }`}
+          />
+          <span className="text-xs text-slate-700">
+            {isRunning
+              ? PHASE_LABEL[phase]
+              : `${AGENTS.length} agents ready • Est. 2–3 min`}
+          </span>
         </div>
       </div>
     </div>

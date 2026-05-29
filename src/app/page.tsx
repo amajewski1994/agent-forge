@@ -2,9 +2,12 @@ import { AgentSidebar } from "@/components/agents";
 import { CouncilChat, PromptInput } from "@/components/council";
 import { DecisionPanel } from "@/components/outputs";
 import { WorkflowTimeline } from "@/components/layout";
+import PhaseStatus from "@/components/layout/PhaseStatus";
+import { CouncilSimProvider } from "@/context/CouncilSimContext";
 
 export default function Home() {
   return (
+    <CouncilSimProvider>
     <main className="h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
       <header className="shrink-0 border-b border-slate-800/60 px-5 py-3 flex items-center gap-3">
         <div className="flex items-center gap-3">
@@ -23,7 +26,7 @@ export default function Home() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-emerald-400 font-medium">Session Active</span>
           </div>
-          <span className="text-xs text-slate-700">Round 1 / 3</span>
+          <PhaseStatus />
         </div>
       </header>
 
@@ -42,5 +45,6 @@ export default function Home() {
 
       <WorkflowTimeline />
     </main>
+    </CouncilSimProvider>
   );
 }

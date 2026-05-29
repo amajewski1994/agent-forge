@@ -18,7 +18,7 @@ const MOCK_MESSAGES: CouncilMessage[] = [
     id: 1,
     agentAbbr: "PM",
     role: "Product Manager",
-    content: "MVP should include doctor search, booking and cancellation.",
+    content: "The MVP should cover user onboarding, the core workflow, and account management.",
     timestamp: "10:02",
     type: "message",
   },
@@ -26,7 +26,7 @@ const MOCK_MESSAGES: CouncilMessage[] = [
     id: 2,
     agentAbbr: "CTO",
     role: "Technical Advisor",
-    content: "I recommend using mock authentication for the MVP.",
+    content: "I recommend using mock authentication for the MVP to keep the scope minimal.",
     timestamp: "10:03",
     type: "message",
   },
@@ -34,7 +34,7 @@ const MOCK_MESSAGES: CouncilMessage[] = [
     id: 3,
     agentAbbr: "DES",
     role: "Designer",
-    content: "The booking flow should be simple: choose doctor, select slot, confirm.",
+    content: "The main flow should be intuitive: sign up, set preferences, complete the core action.",
     timestamp: "10:04",
     type: "message",
   },
@@ -42,7 +42,7 @@ const MOCK_MESSAGES: CouncilMessage[] = [
     id: 4,
     agentAbbr: "QA",
     role: "Quality Analyst",
-    content: "We need to handle cancellation as an edge case.",
+    content: "We need to handle empty states and error recovery as edge cases.",
     timestamp: "10:05",
     type: "message",
   },
@@ -50,17 +50,17 @@ const MOCK_MESSAGES: CouncilMessage[] = [
     id: 5,
     agentAbbr: "CEO",
     role: "Decision Leader",
-    content: "Decision: build search, booking and cancellation. Use mock login.",
+    content: "Decision: ship the core workflow with mock auth. Prioritize the primary user action.",
     timestamp: "10:06",
     type: "decision",
   },
 ];
 
 const MOCK_DECISIONS: Decision[] = [
-  { id: 1, text: "Mock login for MVP" },
-  { id: 2, text: "Doctor search" },
-  { id: 3, text: "Booking flow" },
-  { id: 4, text: "Cancellation flow" },
+  { id: 1, text: "Mock auth for MVP" },
+  { id: 2, text: "Core workflow" },
+  { id: 3, text: "User onboarding" },
+  { id: 4, text: "Error handling" },
 ];
 
 const MOCK_CONFLICTS: Conflict[] = [
