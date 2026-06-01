@@ -20,6 +20,10 @@
 # production
 /build
 
+# backend
+backend/node_modules
+backend/.env
+
 # misc
 .DS_Store
 *.pem
