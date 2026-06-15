@@ -1,5 +1,5 @@
 const { callQwen } = require("./qwenService");
-const { AGENT_PROMPTS } = require("./agentPrompts");
+const { AGENT_PROMPTS, REPLY_USER_PROMPT } = require("./prompts");
 
 function formatConversationHistory(messages) {
   return messages
@@ -150,26 +150,7 @@ async function generateAgentReply({
 
   return callQwen({
     systemPrompt: agent.systemPrompt,
-    userPrompt: `
-User idea:
-${idea}
-
-Council discussion so far:
-${conversationHistory}
-
-Latest message:
-${lastMessage.agentAbbr}: ${lastMessage.content}
-
-Respond to the latest message if it affects your area.
-
-Do not restart the discussion.
-
-Do not repeat earlier arguments.
-
-Do not summarize the conversation.
-
-Speak naturally, as if you were in a live meeting.
-`,
+    userPrompt: REPLY_USER_PROMPT(idea, conversationHistory, lastMessage),
   });
 }
 
@@ -246,7 +227,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
   });
 
   const maxMessages = 8;
-  const minRelevance = 6;
+  const minRelevance = 4;
   const maxResponsesPerAgent = 2;
 
   for (let i = 3; i <= maxMessages; i++) {
