@@ -17,23 +17,17 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
   complete: "Session complete",
 };
 
-const SPEAKING_ORDER = [
-  { abbr: "PM",  role: "Product Manager" },
-  { abbr: "CTO", role: "Technical Advisor" },
-  { abbr: "DES", role: "Designer" },
-  { abbr: "QA",  role: "Quality Analyst" },
-  { abbr: "CEO", role: "Decision Leader" },
-];
-
-function getTypingAgent(phase: CouncilPhase, messageCount: number) {
-  // voting phase: voting UI is in the right panel; suppress chat typing indicator
+function getTypingAgent(phase: CouncilPhase, messageCount: number): { abbr: string; role: string } | null {
   if (phase === "idle" || phase === "voting" || phase === "output" || phase === "complete") return null;
-  if (messageCount >= SPEAKING_ORDER.length) return null;
-  return SPEAKING_ORDER[messageCount];
+  // First two are hardcoded in the backend — safe to name them
+  if (messageCount === 0) return { abbr: "PM", role: "Product Manager" };
+  if (messageCount === 1) return { abbr: "CTO", role: "Technical Advisor" };
+  // Dynamic order from here — don't guess who's next
+  return { abbr: "···", role: "Agent" };
 }
 
 export default function CouncilChat() {
-  const { messages, phase } = useCouncilSim();
+  const { messages, phase, submittedIdea } = useCouncilSim();
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingAgent = getTypingAgent(phase, messages.length);
 
@@ -60,10 +54,19 @@ export default function CouncilChat() {
         )}
       </div>
 
-      {phase === "idle" && messages.length === 0 && (
+      {phase === "idle" && messages.length === 0 && !submittedIdea && (
         <p className="text-xs text-slate-700 text-center py-10">
           Enter an idea and start the council.
         </p>
+      )}
+
+      {submittedIdea && (
+        <div className="flex justify-end">
+          <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-indigo-600/20 border border-indigo-500/30 px-4 py-3">
+            <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider mb-1">Your idea</p>
+            <p className="text-sm text-slate-200 leading-relaxed">{submittedIdea}</p>
+          </div>
+        </div>
       )}
 
       {messages.map((msg) => (

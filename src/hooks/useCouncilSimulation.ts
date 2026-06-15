@@ -26,6 +26,7 @@ export interface CouncilSimState {
   isRunning: boolean;
   round: number;
   agentReadyCount: number;
+  submittedIdea: string;
   start: (idea: string) => void;
 }
 
@@ -103,6 +104,7 @@ export function useCouncilSimulation(): CouncilSimState {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [outputItems, setOutputItems] = useState<OutputItem[]>(OUTPUT_ITEMS_BASE);
+  const [submittedIdea, setSubmittedIdea] = useState("");
 
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -127,6 +129,7 @@ export function useCouncilSimulation(): CouncilSimState {
     };
 
     // Reset all state
+    setSubmittedIdea(idea);
     setPhase("analysis");
     setMessages([]);
     setDecisions([]);
@@ -220,6 +223,7 @@ export function useCouncilSimulation(): CouncilSimState {
     isRunning: phase !== "idle" && phase !== "complete",
     round: 1,
     agentReadyCount: messages.length,
+    submittedIdea,
     start,
   };
 }

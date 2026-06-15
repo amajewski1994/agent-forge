@@ -33,6 +33,7 @@ export default function PromptInput() {
   const handleStart = () => {
     if (!isReady) return;
     start(idea.trim());
+    setIdea("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

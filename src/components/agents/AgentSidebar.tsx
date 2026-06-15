@@ -1,13 +1,8 @@
-"use client";
-
 import { AGENTS } from "@/data/agents";
-import { useCouncilSim } from "@/context/CouncilSimContext";
 import ActiveSessionCard from "./ActiveSessionCard";
 import AgentCard from "./AgentCard";
 
 export default function AgentSidebar() {
-  const { agentStatuses } = useCouncilSim();
-
   return (
     <aside className="flex flex-col overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-800/60">
@@ -19,7 +14,7 @@ export default function AgentSidebar() {
         {AGENTS.map((agent) => (
           <AgentCard
             key={agent.id}
-            agent={{ ...agent, status: agentStatuses[agent.abbr] ?? agent.status }}
+            agent={{ ...agent, status: "active" }}
           />
         ))}
       </div>
