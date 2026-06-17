@@ -5,14 +5,6 @@ import { AGENTS } from "@/data/agents";
 import { useCouncilSim } from "@/context/CouncilSimContext";
 import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 
-const EXAMPLE_CHIPS = [
-  "AI fitness coach",
-  "Marketplace for tutors",
-  "SaaS CRM for dentists",
-  "Event planning platform",
-  "AI travel assistant",
-];
-
 const PHASE_LABEL: Record<CouncilPhase, string> = {
   idle:     "Start Council",
   analysis: "Analyzing...",
@@ -45,23 +37,6 @@ export default function PromptInput() {
   return (
     <div className="shrink-0 p-4 border-t border-slate-800/60">
       <div className="rounded-2xl border border-slate-800/60 bg-slate-900/50 p-3 focus-within:border-slate-700/80 transition-colors">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs text-slate-600 font-medium">Product Idea / MVP Concept</label>
-          <div className="flex items-center gap-1.5">
-            {EXAMPLE_CHIPS.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => setIdea(chip)}
-                disabled={isRunning}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-slate-800 text-slate-600 hover:text-slate-300 hover:border-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="flex items-end gap-3">
           <textarea
             value={idea}
