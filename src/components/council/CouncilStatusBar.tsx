@@ -24,9 +24,10 @@ function getStatus(
     case "council":  return { label: "Debata",                color: "text-emerald-400", pulse: true  };
     case "conflict": return { label: "Wykryto konflikt",      color: "text-amber-400",   pulse: true  };
     case "voting":   return { label: "Głosowanie",            color: "text-violet-400",  pulse: true  };
-    case "decision": return { label: "Decyzja CEO",           color: "text-emerald-400", pulse: false };
-    case "output":   return { label: "Generowanie dokumentów",color: "text-slate-400",   pulse: true  };
-    case "complete": return { label: "Sesja zakończona",      color: "text-slate-500",   pulse: false };
+    case "decision":          return { label: "Decyzja CEO",           color: "text-emerald-400", pulse: false };
+    case "awaiting_proceed": return { label: "Oczekiwanie na Ciebie", color: "text-indigo-400",  pulse: false };
+    case "output":           return { label: "Generowanie dokumentów",color: "text-slate-400",   pulse: true  };
+    case "complete":         return { label: "Sesja zakończona",      color: "text-slate-500",   pulse: false };
   }
 }
 

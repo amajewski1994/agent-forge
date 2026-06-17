@@ -7,18 +7,19 @@ import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 
 const PHASE_HEADER: Record<CouncilPhase, string> = {
-  idle:     "Waiting to start",
-  analysis: "Analyzing requirements",
-  council:  "Council in debate",
-  conflict: "Resolving conflict",
-  voting:   "Agents voting",
-  decision: "CEO is deciding",
-  output:   "Generating deliverables",
-  complete: "Session complete",
+  idle:             "Waiting to start",
+  analysis:         "Analyzing requirements",
+  council:          "Council in debate",
+  conflict:         "Resolving conflict",
+  voting:           "Agents voting",
+  decision:         "CEO is deciding",
+  awaiting_proceed: "Awaiting your decision",
+  output:           "Generating deliverables",
+  complete:         "Session complete",
 };
 
 function getTypingAgent(phase: CouncilPhase, messageCount: number): { abbr: string; role: string } | null {
-  if (phase === "idle" || phase === "conflict" || phase === "voting" || phase === "output" || phase === "complete") return null;
+  if (phase === "idle" || phase === "conflict" || phase === "voting" || phase === "awaiting_proceed" || phase === "output" || phase === "complete") return null;
   // First two are hardcoded in the backend — safe to name them
   if (messageCount === 0) return { abbr: "PM", role: "Product Manager" };
   if (messageCount === 1) return { abbr: "CTO", role: "Technical Advisor" };
@@ -27,7 +28,7 @@ function getTypingAgent(phase: CouncilPhase, messageCount: number): { abbr: stri
 }
 
 export default function CouncilChat() {
-  const { messages, phase, submittedIdea } = useCouncilSim();
+  const { messages, phase, submittedIdea, proceed } = useCouncilSim();
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingAgent = getTypingAgent(phase, messages.length);
 
@@ -85,6 +86,20 @@ export default function CouncilChat() {
 
       {typingAgent && (
         <TypingIndicator agentAbbr={typingAgent.abbr} agentRole={typingAgent.role} />
+      )}
+
+      {phase === "awaiting_proceed" && (
+        <div className="flex justify-center py-2">
+          <button
+            onClick={proceed}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all cursor-pointer"
+          >
+            Proceed
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </div>
       )}
 
       <div ref={bottomRef} />

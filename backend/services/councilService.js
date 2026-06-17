@@ -254,7 +254,7 @@ async function detectConflicts(messages, resolvedTopics = []) {
 }
 
 async function buildCouncilWorkflow(idea, options = {}) {
-  const { send } = options;
+  const { send, waitForProceed } = options;
   const messages = [];
   const resolvedTopics = [];
   const resolvedDecisions = [];
@@ -297,7 +297,9 @@ async function buildCouncilWorkflow(idea, options = {}) {
   const maxRepliesPerTopic = 6;
   let stageNumber = 0;
 
-  for (const topic of topicsToRun) {
+  for (let topicIndex = 0; topicIndex < topicsToRun.length; topicIndex++) {
+    const topic = topicsToRun[topicIndex];
+    const isLastTopic = topicIndex === topicsToRun.length - 1;
     stageNumber++;
     console.log("[Agenda Topic]", topic.title);
     send("topic_start", { stageNumber, topicTitle: topic.title });
@@ -464,6 +466,19 @@ async function buildCouncilWorkflow(idea, options = {}) {
       decision: ceoDecision,
       conflict: conflictData,
     });
+
+    if (!isLastTopic && waitForProceed) {
+      const nextTopic = topicsToRun[topicIndex + 1];
+      sendMessage({
+        id: nextMessageId++,
+        agentAbbr: "PM",
+        role: "Product Manager",
+        content: `Zamknęliśmy temat "${topic.title}". Czy możemy przejść do kolejnego punktu: "${nextTopic.title}"?`,
+        type: "message",
+      });
+      send("awaiting_proceed", {});
+      await waitForProceed();
+    }
   }
 
   send("final_output", {});

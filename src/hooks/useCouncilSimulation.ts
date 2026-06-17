@@ -11,6 +11,7 @@ export type CouncilPhase =
   | "conflict"
   | "voting"
   | "decision"
+  | "awaiting_proceed"
   | "output"
   | "complete";
 
@@ -31,6 +32,7 @@ export interface CouncilSimState {
   agentReadyCount: number;
   submittedIdea: string;
   start: (idea: string) => void;
+  proceed: () => void;
 }
 
 const SPEAKING_ORDER_ABBRS = ["PM", "CTO", "DES", "QA", "CEO"];
@@ -115,6 +117,7 @@ export function useCouncilSimulation(): CouncilSimState {
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const messageCountRef = useRef(0);
+  const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
     return () => {
@@ -123,12 +126,26 @@ export function useCouncilSimulation(): CouncilSimState {
     };
   }, []);
 
+  const proceed = useCallback(() => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+    setPhase("council");
+    fetch(`${BACKEND_URL}/api/council/proceed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    }).catch(console.error);
+  }, []);
+
   const start = useCallback((idea: string) => {
     esRef.current?.close();
     esRef.current = null;
     timers.current.forEach(clearTimeout);
     timers.current = [];
     messageCountRef.current = 0;
+
+    const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    sessionIdRef.current = sessionId;
 
     const schedule = (fn: () => void, ms: number) => {
       timers.current.push(setTimeout(fn, ms));
@@ -147,7 +164,7 @@ export function useCouncilSimulation(): CouncilSimState {
     setTopicSummaries([]);
     setCurrentTopic(null);
 
-    const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}`;
+    const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}&sessionId=${sessionId}`;
     const es = new EventSource(url);
     esRef.current = es;
 
@@ -244,6 +261,11 @@ export function useCouncilSimulation(): CouncilSimState {
       setPhase("council");
     });
 
+    // ── Proceed gate ───────────────────────────────────────────────────────
+    es.addEventListener("awaiting_proceed", () => {
+      setPhase("awaiting_proceed");
+    });
+
     // ── Stage summaries ────────────────────────────────────────────────────
     es.addEventListener("topic_start", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as { stageNumber: number; topicTitle: string };
@@ -303,5 +325,6 @@ export function useCouncilSimulation(): CouncilSimState {
     agentReadyCount: messages.length,
     submittedIdea,
     start,
+    proceed,
   };
 }

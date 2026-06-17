@@ -6,14 +6,15 @@ import { useCouncilSim } from "@/context/CouncilSimContext";
 import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 
 const PHASE_LABEL: Record<CouncilPhase, string> = {
-  idle:     "Start Council",
-  analysis: "Analyzing...",
-  council:  "In council...",
-  conflict: "Resolving conflict...",
-  voting:   "Agents voting...",
-  decision: "Deciding...",
-  output:   "Generating output...",
-  complete: "Start Council",
+  idle:             "Start Council",
+  analysis:         "Analyzing...",
+  council:          "In council...",
+  conflict:         "Resolving conflict...",
+  voting:           "Agents voting...",
+  decision:         "Deciding...",
+  awaiting_proceed: "Waiting for you...",
+  output:           "Generating output...",
+  complete:         "Start Council",
 };
 
 export default function PromptInput() {

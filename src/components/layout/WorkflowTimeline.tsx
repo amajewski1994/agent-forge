@@ -6,25 +6,27 @@ import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 import WorkflowStepItem from "./WorkflowStepItem";
 
 const PHASE_LABEL: Record<CouncilPhase, string> = {
-  idle:     "Ready",
-  analysis: "Phase: Analysis",
-  council:  "Phase: Discussion",
-  conflict: "Phase: Resolution",
-  voting:   "Phase: Voting",
-  decision: "Phase: Decision",
-  output:   "Phase: Output",
-  complete: "Complete",
+  idle:             "Ready",
+  analysis:         "Phase: Analysis",
+  council:          "Phase: Discussion",
+  conflict:         "Phase: Resolution",
+  voting:           "Phase: Voting",
+  decision:         "Phase: Decision",
+  awaiting_proceed: "Phase: Decision",
+  output:           "Phase: Output",
+  complete:         "Complete",
 };
 
 const PHASE_STEPS: Record<CouncilPhase, WorkflowStepStatus[]> = {
-  idle:     ["active",  "pending", "pending", "pending", "pending", "pending"],
-  analysis: ["done",    "active",  "pending", "pending", "pending", "pending"],
-  council:  ["done",    "done",    "active",  "pending", "pending", "pending"],
-  conflict: ["done",    "done",    "active",  "pending", "pending", "pending"],
-  voting:   ["done",    "done",    "active",  "pending", "pending", "pending"],
-  decision: ["done",    "done",    "done",    "active",  "pending", "pending"],
-  output:   ["done",    "done",    "done",    "done",    "active",  "pending"],
-  complete: ["done",    "done",    "done",    "done",    "done",    "done"],
+  idle:             ["active",  "pending", "pending", "pending", "pending", "pending"],
+  analysis:         ["done",    "active",  "pending", "pending", "pending", "pending"],
+  council:          ["done",    "done",    "active",  "pending", "pending", "pending"],
+  conflict:         ["done",    "done",    "active",  "pending", "pending", "pending"],
+  voting:           ["done",    "done",    "active",  "pending", "pending", "pending"],
+  decision:         ["done",    "done",    "done",    "active",  "pending", "pending"],
+  awaiting_proceed: ["done",    "done",    "done",    "active",  "pending", "pending"],
+  output:           ["done",    "done",    "done",    "done",    "active",  "pending"],
+  complete:         ["done",    "done",    "done",    "done",    "done",    "done"],
 };
 
 export default function WorkflowTimeline() {
