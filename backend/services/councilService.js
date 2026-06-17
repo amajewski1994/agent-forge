@@ -1,143 +1,75 @@
 const { callQwen } = require("./qwenService");
-const { AGENT_PROMPTS, REPLY_USER_PROMPT } = require("./prompts");
+const {
+  AGENT_PROMPTS,
+  REPLY_USER_PROMPT,
+  CLASSIFY_PROJECT_SYSTEM_PROMPT,
+  CLASSIFY_PROJECT_USER_PROMPT,
+  FIXED_AGENDA_STAGES,
+  BUILD_AGENDA_SYSTEM_PROMPT,
+  BUILD_AGENDA_USER_PROMPT,
+  PM_IDEA_INTRO_USER_PROMPT,
+  TOPIC_OPENING_USER_PROMPT,
+  CEO_TOPIC_DECISION_SYSTEM_PROMPT,
+  CEO_TOPIC_DECISION_USER_PROMPT,
+  INTEREST_SYSTEM_PROMPT,
+  INTEREST_USER_PROMPT,
+  DETECT_CONFLICTS_SYSTEM_PROMPT,
+  DETECT_CONFLICTS_USER_PROMPT,
+  AGENT_SCOPE_DESCRIPTIONS,
+  VALIDATE_AGENT_SCOPE_SYSTEM_PROMPT,
+  VALIDATE_AGENT_SCOPE_USER_PROMPT,
+  TOPIC_SUMMARY_SYSTEM_PROMPT,
+  TOPIC_SUMMARY_USER_PROMPT,
+} = require("./prompts");
+const {
+  formatConversationHistory,
+  extractJson,
+} = require("../utils/councilUtils");
+const { runConflictVote } = require("./voteService");
 
-function formatConversationHistory(messages) {
-  return messages
-    .map((msg) => `${msg.agentAbbr} (${msg.role}): ${msg.content}`)
-    .join("\n\n");
-}
-
-function computeWinner(voteOptions, votes) {
-  const counts = Object.fromEntries(voteOptions.map((o) => [o.id, 0]));
-
-  for (const v of votes) {
-    counts[v.optionId] = (counts[v.optionId] ?? 0) + 1;
-  }
-
-  const sorted = [...voteOptions].sort((a, b) => counts[b.id] - counts[a.id]);
-  const isTie = counts[sorted[0].id] === counts[sorted[1].id];
-
-  if (isTie) {
-    return voteOptions.find((o) => o.id === "B");
-  }
-
-  return sorted[0];
-}
-
-const DECISION_TEMPLATES = {
-  "Full auth": {
-    content:
-      "The council has voted: full authentication from day one. Security cannot be deferred.",
-    decisions: [
-      { id: 1, text: "Full auth from day one" },
-      { id: 2, text: "Core workflow first" },
-      { id: 3, text: "Mock auth as internal test fallback" },
-    ],
-  },
-  "Mock auth": {
-    content:
-      "Decision: use mock authentication for the MVP. Full auth is v2 scope.",
-    decisions: [
-      { id: 1, text: "Mock auth for MVP" },
-      { id: 2, text: "Core workflow first" },
-      { id: 3, text: "Full auth moved to v2" },
-    ],
-  },
+const AGENT_META = {
+  PM: { agentAbbr: "PM", role: "Product Manager" },
+  CTO: { agentAbbr: "CTO", role: "Chief Technology Officer" },
+  DESIGNER: { agentAbbr: "DES", role: "Product Designer" },
+  QA: { agentAbbr: "QA", role: "Quality Analyst" },
 };
-
-function buildDecisionEvent(winner) {
-  const template = DECISION_TEMPLATES[winner.label] ?? {
-    content: `The council has decided: ${winner.label}.`,
-    decisions: [{ id: 1, text: winner.label }],
-  };
-
-  return {
-    id: 5,
-    agentAbbr: "CEO",
-    role: "Decision Leader",
-    content: template.content,
-    type: "decision",
-    decisions: template.decisions,
-  };
-}
 
 async function evaluateAgentInterest({
   agentKey,
   idea,
   lastMessage,
   conversationHistory,
+  resolvedDecisions = [],
+  topic = null,
 }) {
   const agent = AGENT_PROMPTS[agentKey];
+  const decisionsBlock =
+    resolvedDecisions.length > 0
+      ? `\nFINAL DECISIONS (CLOSED — score 0 if the agent wants to reopen these):\n${resolvedDecisions.map((d) => `- ${d.topic}: "${d.winner}"`).join("\n")}\n`
+      : "";
 
   const result = await callQwen({
-    systemPrompt: `
-You are an internal routing classifier for a product council.
-
-Your job is NOT to be helpful.
-Your job is to decide whether this agent truly needs to speak next.
-
-Return ONLY valid JSON.
-No markdown. No explanation.
-
-Response shape:
-{
-  "relevance": 0,
-  "stance": "neutral",
-  "reason": "short reason"
-}
-
-Scoring rules:
-0 = completely irrelevant
-1-2 = weakly related, should not respond
-3-4 = somewhat related, but not important enough
-5 = relevant, but still probably skip
-6-7 = important enough to respond
-8-9 = strong disagreement, major risk, or direct impact on this agent's goal
-10 = critical issue that must be addressed immediately
-
-Important:
-- Most agents should score below 6.
-- Do not give 8 unless the latest message creates a serious issue for this agent's role.
-- Do not respond just because the topic is generally related.
-- Penalize repetition.
-- Penalize generic agreement.
-- If another agent already covered the concern, score 0-3.
-- If unsure, score 4.
-
-stance must be one of:
-"agree", "disagree", "clarify", "neutral".
-`,
-    userPrompt: `
-Agent:
-${agentKey}
-
-Agent role prompt:
-${agent.systemPrompt}
-
-User idea:
-${idea}
-
-Conversation so far:
-${conversationHistory}
-
-Latest message:
-${lastMessage.agentAbbr}: ${lastMessage.content}
-
-Should this agent respond next?
-Return a low score unless this agent has a specific, non-repeated reason to speak next.
-Return JSON only.
-`,
+    systemPrompt: INTEREST_SYSTEM_PROMPT,
+    userPrompt: INTEREST_USER_PROMPT({
+      agentKey,
+      agentSystemPrompt: agent.systemPrompt,
+      idea,
+      decisionsBlock,
+      conversationHistory,
+      lastMessage,
+      topic,
+    }),
   });
 
   try {
     return JSON.parse(result);
   } catch {
-    return {
-      relevance: 0,
-      stance: "neutral",
-      reason: "Invalid JSON response",
-    };
+    return { relevance: 0, stance: "neutral", reason: "Invalid JSON response" };
   }
+}
+
+function randomSentenceCount() {
+  return Math.floor(Math.random() * 3) + 2; // 2, 3, or 4
 }
 
 async function generateAgentReply({
@@ -145,332 +77,396 @@ async function generateAgentReply({
   idea,
   conversationHistory,
   lastMessage,
+  resolvedDecisions = [],
+  topic = null,
+  sentenceCount = randomSentenceCount(),
 }) {
-  const agent = AGENT_PROMPTS[agentKey];
-
   return callQwen({
-    systemPrompt: agent.systemPrompt,
-    userPrompt: REPLY_USER_PROMPT(idea, conversationHistory, lastMessage),
+    systemPrompt: AGENT_PROMPTS[agentKey].systemPrompt,
+    userPrompt: REPLY_USER_PROMPT(
+      idea,
+      conversationHistory,
+      lastMessage,
+      resolvedDecisions,
+      topic,
+      sentenceCount,
+    ),
   });
+}
+
+async function validateAgentScope({ agentKey, scopeDescription, message }) {
+  const result = await callQwen({
+    systemPrompt: VALIDATE_AGENT_SCOPE_SYSTEM_PROMPT,
+    userPrompt: VALIDATE_AGENT_SCOPE_USER_PROMPT({
+      agentKey,
+      scopeDescription,
+      message,
+    }),
+  });
+  try {
+    return JSON.parse(extractJson(result)).inScope !== false;
+  } catch {
+    return true;
+  }
+}
+
+async function generateCheckedAgentReply(params) {
+  const scopeDescription = AGENT_SCOPE_DESCRIPTIONS[params.agentKey];
+  const paramsWithCount = { ...params, sentenceCount: randomSentenceCount() };
+  if (!scopeDescription) return generateAgentReply(paramsWithCount);
+
+  let response;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    response = await generateAgentReply(paramsWithCount);
+    const inScope = await validateAgentScope({
+      agentKey: params.agentKey,
+      scopeDescription,
+      message: response,
+    });
+    console.log(
+      `[Scope Check] ${params.agentKey} (attempt ${attempt}):`,
+      inScope ? "in scope" : "out of scope, retrying",
+    );
+    if (inScope) return response;
+  }
+  return response;
+}
+
+async function generatePMIdeaIntro({ idea }) {
+  return callQwen({
+    systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
+    userPrompt: PM_IDEA_INTRO_USER_PROMPT({ idea }),
+  });
+}
+
+async function generateTopicOpening({ idea, topic, conversationHistory }) {
+  return callQwen({
+    systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
+    userPrompt: TOPIC_OPENING_USER_PROMPT({ idea, topic, conversationHistory }),
+  });
+}
+
+async function generateCEOTopicDecision({
+  topic,
+  conversationHistory,
+  resolvedDecisions = [],
+  voteWinner = null,
+}) {
+  const result = await callQwen({
+    systemPrompt: CEO_TOPIC_DECISION_SYSTEM_PROMPT,
+    userPrompt: CEO_TOPIC_DECISION_USER_PROMPT({
+      topic,
+      conversationHistory,
+      resolvedDecisions,
+      voteWinner,
+    }),
+  });
+  return (
+    result?.trim() ||
+    `Zespół idzie dalej z tym, co ustaliliśmy w temacie "${topic.title}".`
+  );
+}
+
+function formatAgendaMessage(agenda) {
+  const list = agenda
+    .map((topic, idx) => `${idx + 1}. ${topic.title}`)
+    .join("\n");
+  return `Oto nasza agenda na to spotkanie. Przejdziemy po kolei przez te punkty:\n\n${list}\n\nZaczynamy od pierwszego.`;
+}
+
+async function classifyProject(idea) {
+  const result = await callQwen({
+    systemPrompt: CLASSIFY_PROJECT_SYSTEM_PROMPT,
+    userPrompt: CLASSIFY_PROJECT_USER_PROMPT({ idea }),
+  });
+  try {
+    return JSON.parse(extractJson(result));
+  } catch {
+    return {
+      category: "Other",
+      confidence: 0,
+      reason: "Invalid JSON response",
+    };
+  }
+}
+
+async function buildAgenda(idea, category) {
+  const result = await callQwen({
+    systemPrompt: BUILD_AGENDA_SYSTEM_PROMPT,
+    userPrompt: BUILD_AGENDA_USER_PROMPT({ idea, category }),
+  });
+
+  let dynamicTopics = [];
+  try {
+    const parsed = JSON.parse(extractJson(result));
+    if (Array.isArray(parsed.topics)) {
+      dynamicTopics = parsed.topics.filter((t) => t?.title && t?.description);
+    }
+  } catch {}
+
+  const uxIndex = FIXED_AGENDA_STAGES.findIndex(
+    (s) => s.title === "User Experience",
+  );
+  return [
+    ...FIXED_AGENDA_STAGES.slice(0, uxIndex + 1),
+    ...dynamicTopics,
+    ...FIXED_AGENDA_STAGES.slice(uxIndex + 1),
+  ];
+}
+
+async function generateTopicSummary({ topicTitle, stageMessages }) {
+  const result = await callQwen({
+    systemPrompt: TOPIC_SUMMARY_SYSTEM_PROMPT,
+    userPrompt: TOPIC_SUMMARY_USER_PROMPT({ topicTitle, stageMessages }),
+  });
+  return result?.trim() || "Dyskusja objęła główne aspekty tematu.";
+}
+
+async function detectConflicts(messages, resolvedTopics = []) {
+  const fullHistory = formatConversationHistory(messages);
+  const recentFormatted = messages
+    .slice(-3)
+    .map((m) => `${m.agentAbbr} (${m.role}): ${m.content}`)
+    .join("\n\n");
+
+  const resolvedSection =
+    resolvedTopics.length > 0
+      ? `\n\nTopics already resolved by vote — do NOT trigger a new conflict on these:\n${resolvedTopics.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+      : "";
+
+  const result = await callQwen({
+    systemPrompt: DETECT_CONFLICTS_SYSTEM_PROMPT,
+    userPrompt: DETECT_CONFLICTS_USER_PROMPT({
+      fullHistory,
+      recentFormatted,
+      resolvedSection,
+    }),
+  });
+
+  try {
+    const parsed = JSON.parse(extractJson(result));
+    if (parsed.hasConflict && (parsed.confidence ?? 0) < 7)
+      return { hasConflict: false };
+    return parsed;
+  } catch {
+    return { hasConflict: false };
+  }
 }
 
 async function buildCouncilWorkflow(idea, options = {}) {
   const { send } = options;
-
   const messages = [];
-
-  const agentMeta = {
-    PM: {
-      agentAbbr: "PM",
-      role: "Product Manager",
-    },
-    CTO: {
-      agentAbbr: "CTO",
-      role: "Chief Technology Officer",
-    },
-    DESIGNER: {
-      agentAbbr: "DES",
-      role: "Product Designer",
-    },
-    QA: {
-      agentAbbr: "QA",
-      role: "Quality Analyst",
-    },
-  };
-
-  const responseCount = {
-    PM: 0,
-    CTO: 0,
-    DESIGNER: 0,
-    QA: 0,
-  };
+  const resolvedTopics = [];
+  const resolvedDecisions = [];
+  let nextMessageId = 1;
 
   const sendMessage = (message) => {
     messages.push(message);
-    responseCount[
-      Object.keys(agentMeta).find(
-        (key) => agentMeta[key].agentAbbr === message.agentAbbr,
-      )
-    ]++;
-
     send("agent_message", message);
   };
 
-  const pmResponse = await callQwen({
-    systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
-    userPrompt: AGENT_PROMPTS.PM.buildUserPrompt({ idea }),
-  });
+  const projectCategory = await classifyProject(idea);
+  console.log(
+    "[Project Classification]",
+    JSON.stringify(projectCategory, null, 2),
+  );
 
+  const agenda = await buildAgenda(idea, projectCategory.category);
+  console.log("[Council Agenda]", JSON.stringify(agenda, null, 2));
+
+  const pmIdeaIntro = await generatePMIdeaIntro({ idea });
   sendMessage({
-    id: 1,
+    id: nextMessageId++,
     agentAbbr: "PM",
     role: "Product Manager",
-    content: pmResponse,
+    content: pmIdeaIntro,
     type: "message",
   });
-
-  const ctoLastMessage = messages[messages.length - 1];
-
-  const ctoResponse = await generateAgentReply({
-    agentKey: "CTO",
-    idea,
-    conversationHistory: formatConversationHistory(messages),
-    lastMessage: ctoLastMessage,
-  });
-
   sendMessage({
-    id: 2,
-    agentAbbr: "CTO",
-    role: "Chief Technology Officer",
-    content: ctoResponse,
+    id: nextMessageId++,
+    agentAbbr: "PM",
+    role: "Product Manager",
+    content: formatAgendaMessage(agenda),
     type: "message",
   });
 
-  const maxMessages = 8;
-  const minRelevance = 4;
-  const maxResponsesPerAgent = 2;
+  // TODO: testing only — run the first agenda topic, not the full agenda.
+  const topicsToRun = agenda.slice(0, 2);
+  const minRelevance = 5;
+  const maxResponsesPerAgentPerTopic = 3;
+  const maxRepliesPerTopic = 6;
+  let stageNumber = 0;
 
-  for (let i = 3; i <= maxMessages; i++) {
-    const lastMessage = messages[messages.length - 1];
-    const conversationHistory = formatConversationHistory(messages);
+  for (const topic of topicsToRun) {
+    stageNumber++;
+    console.log("[Agenda Topic]", topic.title);
+    send("topic_start", { stageNumber, topicTitle: topic.title });
+    const topicStartIndex = messages.length;
 
-    const candidateAgents = Object.keys(agentMeta).filter((agentKey) => {
-      const isSameAgent =
-        agentMeta[agentKey].agentAbbr === lastMessage.agentAbbr;
-
-      const hasReachedLimit = responseCount[agentKey] >= maxResponsesPerAgent;
-
-      return !isSameAgent && !hasReachedLimit;
-    });
-
-    const evaluations = [];
-
-    for (const agentKey of candidateAgents) {
-      const evaluation = await evaluateAgentInterest({
-        agentKey,
-        idea,
-        lastMessage,
-        conversationHistory,
-      });
-
-      evaluations.push({
-        agentKey,
-        ...evaluation,
+    if (stageNumber > 1) {
+      sendMessage({
+        id: nextMessageId++,
+        agentAbbr: "PM",
+        role: "Product Manager",
+        content: `Przechodzimy do punktu numer ${stageNumber}: ${topic.title}.`,
+        type: "message",
       });
     }
 
-    evaluations.sort((a, b) => b.relevance - a.relevance);
-
-    const winner = evaluations[0];
-
-    if (!winner || winner.relevance < minRelevance) {
-      break;
-    }
-
-    const response = await generateAgentReply({
-      agentKey: winner.agentKey,
+    const pmOpening = await generateTopicOpening({
       idea,
-      conversationHistory,
-      lastMessage,
+      topic,
+      conversationHistory: formatConversationHistory(messages),
     });
-
-    const meta = agentMeta[winner.agentKey];
-
     sendMessage({
-      id: i,
-      agentAbbr: meta.agentAbbr,
-      role: meta.role,
-      content: response,
+      id: nextMessageId++,
+      agentAbbr: "PM",
+      role: "Product Manager",
+      content: pmOpening,
       type: "message",
     });
+
+    const firstResponderKey = topic.firstResponder || "CTO";
+    const firstResponderMeta = AGENT_META[firstResponderKey] || AGENT_META.CTO;
+
+    const firstResponse = await generateCheckedAgentReply({
+      agentKey: firstResponderKey,
+      idea,
+      conversationHistory: formatConversationHistory(messages),
+      lastMessage: messages[messages.length - 1],
+      resolvedDecisions,
+      topic,
+    });
+    sendMessage({
+      id: nextMessageId++,
+      agentAbbr: firstResponderMeta.agentAbbr,
+      role: firstResponderMeta.role,
+      content: firstResponse,
+      type: "message",
+    });
+
+    const responseCountForTopic = { PM: 1, CTO: 0, DESIGNER: 0, QA: 0 };
+    responseCountForTopic[firstResponderKey] = 1;
+
+    for (let i = 0; i < maxRepliesPerTopic; i++) {
+      const lastMessage = messages[messages.length - 1];
+      const conversationHistory = formatConversationHistory(messages);
+
+      const candidateAgents = Object.keys(AGENT_META).filter(
+        (key) =>
+          AGENT_META[key].agentAbbr !== lastMessage.agentAbbr &&
+          responseCountForTopic[key] < maxResponsesPerAgentPerTopic,
+      );
+
+      const evaluations = [];
+      for (const agentKey of candidateAgents) {
+        const evaluation = await evaluateAgentInterest({
+          agentKey,
+          idea,
+          lastMessage,
+          conversationHistory,
+          resolvedDecisions,
+          topic,
+        });
+        evaluations.push({ agentKey, ...evaluation });
+      }
+
+      evaluations.sort((a, b) => b.relevance - a.relevance);
+      const winner = evaluations[0];
+      if (!winner || winner.relevance < minRelevance) break;
+
+      const response = await generateCheckedAgentReply({
+        agentKey: winner.agentKey,
+        idea,
+        conversationHistory,
+        lastMessage,
+        resolvedDecisions,
+        topic,
+      });
+
+      const meta = AGENT_META[winner.agentKey];
+      sendMessage({
+        id: nextMessageId++,
+        agentAbbr: meta.agentAbbr,
+        role: meta.role,
+        content: response,
+        type: "message",
+      });
+      responseCountForTopic[winner.agentKey] =
+        (responseCountForTopic[winner.agentKey] || 0) + 1;
+    }
+
+    const conflict = await detectConflicts(
+      messages.slice(topicStartIndex),
+      resolvedTopics,
+    );
+    console.log("[Conflict Detection]", JSON.stringify(conflict, null, 2));
+
+    let conflictData = null;
+    let voteWinner = null;
+
+    if (conflict.hasConflict) {
+      resolvedTopics.push(conflict.topic);
+      sendMessage({
+        id: nextMessageId++,
+        agentAbbr: "PM",
+        role: "Product Manager",
+        content: `Mamy różnicę zdań w kwestii "${conflict.topic}". Przechodzimy do głosowania.`,
+        type: "message",
+      });
+      const result = await runConflictVote({ conflict, messages, send });
+      if (result?.winner) {
+        conflictData = result.conflictData ?? null;
+        voteWinner = result.winner;
+      }
+    } else {
+      sendMessage({
+        id: nextMessageId++,
+        agentAbbr: "PM",
+        role: "Product Manager",
+        content:
+          "Widzę że jesteśmy zgodni. Oddaję głos CEO w celu podjęcia decyzji.",
+        type: "message",
+      });
+    }
+
+    const ceoDecision = await generateCEOTopicDecision({
+      topic,
+      conversationHistory: formatConversationHistory(
+        messages.slice(topicStartIndex),
+      ),
+      resolvedDecisions,
+      voteWinner,
+    });
+    const ceoMessage = {
+      id: Date.now(),
+      agentAbbr: "CEO",
+      role: "Decision Leader",
+      content: ceoDecision,
+      type: "decision",
+    };
+    messages.push(ceoMessage);
+    send("agent_message", ceoMessage);
+    resolvedDecisions.push({ topic: topic.title, winner: ceoDecision });
+
+    const stageHistory = formatConversationHistory(
+      messages.slice(topicStartIndex),
+    );
+    const summaryText = await generateTopicSummary({
+      topicTitle: topic.title,
+      stageMessages: stageHistory,
+    });
+    send("stage_summary", {
+      id: Date.now(),
+      stageNumber,
+      topicTitle: topic.title,
+      summary: summaryText,
+      decision: ceoDecision,
+      conflict: conflictData,
+    });
   }
+
+  send("final_output", {});
 }
 
-// OLD WORKFLOW WITH VOTES
-// async function buildCouncilWorkflow(idea) {
-//   const pmResponse = await callQwen({
-//     systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
-//     userPrompt: AGENT_PROMPTS.PM.buildUserPrompt({ idea }),
-//   });
-
-//   const ctoResponse = await callQwen({
-//     systemPrompt: AGENT_PROMPTS.CTO.systemPrompt,
-//     userPrompt: AGENT_PROMPTS.CTO.buildUserPrompt({
-//       idea,
-//       pmResponse,
-//     }),
-//   });
-
-//   const designerResponse = await callQwen({
-//     systemPrompt: AGENT_PROMPTS.DESIGNER.systemPrompt,
-//     userPrompt: AGENT_PROMPTS.DESIGNER.buildUserPrompt({
-//       idea,
-//       pmResponse,
-//       ctoResponse,
-//     }),
-//   });
-
-//   const qaResponse = await callQwen({
-//     systemPrompt: AGENT_PROMPTS.QA.systemPrompt,
-//     userPrompt: AGENT_PROMPTS.QA.buildUserPrompt({
-//       idea,
-//       pmResponse,
-//       ctoResponse,
-//       designerResponse,
-//     }),
-//   });
-
-//   const agentMessages = [
-//     {
-//       type: "agent_message",
-//       data: {
-//         id: 1,
-//         agentAbbr: "PM",
-//         role: "Product Manager",
-//         content: pmResponse,
-//         // content: `Analyzing idea: "${idea}". The MVP should focus on onboarding, the core workflow, and basic account handling.`,
-//         type: "message",
-//       },
-//     },
-//     {
-//       type: "agent_message",
-//       data: {
-//         id: 2,
-//         agentAbbr: "CTO",
-//         role: "Chief Technology Officer",
-//         // content:
-//         //   "I recommend mock authentication for the MVP. Full authentication would slow us down significantly.",
-//         content: ctoResponse,
-//         type: "message",
-//       },
-//     },
-//     {
-//       type: "agent_message",
-//       data: {
-//         id: 3,
-//         agentAbbr: "DES",
-//         role: "Designer",
-//         content: designerResponse,
-//         // content:
-//         //   "The user flow should be simple: start, complete the main action, confirm success.",
-//         type: "message",
-//       },
-//     },
-//     {
-//       type: "agent_message",
-//       data: {
-//         id: 4,
-//         agentAbbr: "QA",
-//         role: "Quality Analyst",
-//         content: qaResponse,
-//         // content:
-//         //   "We need to handle empty states, failed actions, and unclear user input.",
-//         type: "message",
-//       },
-//     },
-//   ];
-
-//   const voteOptions = [
-//     { id: "A", label: "Full auth" },
-//     { id: "B", label: "Mock auth" },
-//   ];
-
-//   const votes = [
-//     {
-//       agentAbbr: "PM",
-//       agentName: "Product Manager",
-//       optionId: "B",
-//       reason: "Mock auth keeps the MVP scope lean.",
-//     },
-//     {
-//       agentAbbr: "CTO",
-//       agentName: "Technical Advisor",
-//       optionId: "B",
-//       reason: "Full auth adds weeks of work. Ship first, secure later.",
-//     },
-//     {
-//       agentAbbr: "DES",
-//       agentName: "Designer",
-//       optionId: "A",
-//       reason: "Real auth gives users a more trustworthy experience.",
-//     },
-//     {
-//       agentAbbr: "QA",
-//       agentName: "Quality Analyst",
-//       optionId: "A",
-//       reason: "Real authentication reduces security and testing risks.",
-//     },
-//   ];
-
-//   const winner = computeWinner(voteOptions, votes);
-
-//   return [
-//     ...agentMessages,
-//     // {
-//     //   type: "conflict_detected",
-//     //   data: {
-//     //     id: 1,
-//     //     title: "Authentication scope",
-//     //     description:
-//     //       "PM wants account handling, CTO wants mock authentication for MVP speed.",
-//     //     resolution: "TBD — pending vote",
-//     //   },
-//     // },
-//     // {
-//     //   type: "vote_options",
-//     //   data: voteOptions,
-//     // },
-//     // ...votes.map((vote) => ({
-//     //   type: "vote",
-//     //   data: vote,
-//     // })),
-//     // {
-//     //   type: "decision",
-//     //   data: buildDecisionEvent(winner),
-//     // },
-//     // {
-//     //   type: "final_output",
-//     //   data: {
-//     //     prd: "MVP application based on a simple user flow and fast validation.",
-//     //     mvpScope: ["mock login", "core product action", "basic dashboard"],
-//     //     userFlow: [
-//     //       "enter idea",
-//     //       "start council",
-//     //       "review decisions",
-//     //       "export MVP plan",
-//     //     ],
-//     //     architecture: [
-//     //       "Next.js frontend",
-//     //       "Express backend",
-//     //       "SSE realtime stream",
-//     //     ],
-//     //     databaseSchema: [
-//     //       "projects",
-//     //       "council_sessions",
-//     //       "messages",
-//     //       "decisions",
-//     //       "outputs",
-//     //     ],
-//     //     apiEndpoints: ["GET /", "GET /api/council/start?idea=..."],
-//     //     backlog: [
-//     //       "Frontend flow",
-//     //       "Backend workflow",
-//     //       "AI integration",
-//     //       "Database persistence",
-//     //       "Deploy",
-//     //     ],
-//     //     implementationPlan: [
-//     //       "Build mock workflow",
-//     //       "Move workflow logic to backend",
-//     //       "Connect Qwen API",
-//     //       "Store sessions",
-//     //       "Deploy demo",
-//     //     ],
-//     //   },
-//     // },
-//   ];
-// }
-
-module.exports = {
-  buildCouncilWorkflow,
-};
+module.exports = { buildCouncilWorkflow };
