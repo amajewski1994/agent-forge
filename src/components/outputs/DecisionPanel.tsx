@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useCouncilSim } from "@/context/CouncilSimContext";
-import DecisionCard from "./DecisionCard";
 import OutputCard from "./OutputCard";
 import ReportPreviewModal from "./ReportPreviewModal";
 import SectionHeader from "./SectionHeader";
@@ -10,7 +9,7 @@ import StageSummaryCard from "./StageSummaryCard";
 import VoteCard from "./VoteCard";
 
 export default function DecisionPanel() {
-  const { decisions, activeConflict, votes, voteOptions, outputItems, topicSummaries, phase } = useCouncilSim();
+  const { activeConflict, votes, voteOptions, outputItems, topicSummaries, phase } = useCouncilSim();
   const readyCount = outputItems.filter((i) => i.ready).length;
   const [showReport, setShowReport] = useState(false);
 
@@ -23,18 +22,6 @@ export default function DecisionPanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
-
-        {/* Stage summaries */}
-        {topicSummaries.length > 0 && (
-          <section>
-            <SectionHeader title="Etapy" count={topicSummaries.length} />
-            <div className="space-y-2">
-              {topicSummaries.map((s, i) => (
-                <StageSummaryCard key={s.id} summary={s} delay={i * 80} />
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Voting */}
         {showVoting && (
@@ -49,19 +36,17 @@ export default function DecisionPanel() {
           </section>
         )}
 
-        {/* Decisions */}
-        <section>
-          <SectionHeader title="Decisions" count={decisions.length || undefined} />
-          {decisions.length === 0 ? (
-            <p className="text-[10px] text-slate-800 px-0.5">Waiting for council...</p>
-          ) : (
-            <div className="space-y-1.5">
-              {decisions.map((decision, i) => (
-                <DecisionCard key={decision.id} decision={decision} delay={i * 80} />
+        {/* Stage summaries */}
+        {topicSummaries.length > 0 && (
+          <section>
+            <SectionHeader title="Etapy" count={topicSummaries.length} />
+            <div className="space-y-2">
+              {topicSummaries.map((s, i) => (
+                <StageSummaryCard key={s.id} summary={s} delay={i * 80} />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Final Output */}
         <section>

@@ -68,47 +68,18 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
           </div>
         )}
 
-        {/* Decyzja */}
-        <button
-          onClick={() => toggle("decision")}
-          className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors border-t border-slate-700/20"
-        >
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 shrink-0" />
-            <span className="text-[11px] font-medium text-emerald-400">Decyzja</span>
-          </div>
-          <ChevronIcon open={openSection === "decision"} />
-        </button>
-        {openSection === "decision" && (
-          <div className="px-3 pb-2.5 pt-0.5 border-t border-slate-700/20 bg-emerald-950/20">
-            <p className="text-[11px] text-slate-300 leading-relaxed">{summary.decision}</p>
-          </div>
-        )}
-
-        {/* Konflikt (only when resolved by vote) */}
+        {/* Głosowanie (only when resolved by vote) */}
         {conflict && (
           <>
             <button
               onClick={() => toggle("conflict")}
               className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors border-t border-slate-700/20"
             >
-              <div className="flex items-center gap-1.5">
-                <svg className="w-2.5 h-2.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="text-[11px] font-medium text-amber-400">Konflikt</span>
-                <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  ✓ {conflict.resolution}
-                </span>
-              </div>
+              <span className="text-[11px] font-medium text-slate-400 truncate">Głosowanie – {summary.topicTitle}</span>
               <ChevronIcon open={openSection === "conflict"} />
             </button>
             {openSection === "conflict" && (
-              <div className="px-3 pb-2.5 pt-2 border-t border-amber-500/10 bg-amber-950/10">
+              <div className="px-3 pb-2.5 pt-2 border-t border-slate-700/20 bg-slate-800/20">
                 <p className="text-[11px] text-slate-500 leading-relaxed mb-2">{conflict.description}</p>
                 <div className="space-y-1.5">
                   {conflict.votes.map((vote, i) => {
@@ -143,9 +114,29 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
                     );
                   })}
                 </div>
+                <div className="mt-2 pt-2 border-t border-slate-700/20">
+                  <span className="text-[10px] font-semibold text-emerald-400">✓ {conflict.resolution}</span>
+                </div>
               </div>
             )}
           </>
+        )}
+
+        {/* Decyzja */}
+        <button
+          onClick={() => toggle("decision")}
+          className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors border-t border-slate-700/20"
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 shrink-0" />
+            <span className="text-[11px] font-medium text-emerald-400">Decyzja</span>
+          </div>
+          <ChevronIcon open={openSection === "decision"} />
+        </button>
+        {openSection === "decision" && (
+          <div className="px-3 pb-2.5 pt-0.5 border-t border-slate-700/20 bg-emerald-950/20">
+            <p className="text-[11px] text-slate-300 leading-relaxed">{summary.decision}</p>
+          </div>
         )}
       </div>
     </div>
