@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 import { useCouncilSim } from "@/context/CouncilSimContext";
-import ConflictCard from "./ConflictCard";
 import DecisionCard from "./DecisionCard";
 import OutputCard from "./OutputCard";
 import ReportPreviewModal from "./ReportPreviewModal";
 import SectionHeader from "./SectionHeader";
+import StageSummaryCard from "./StageSummaryCard";
 import VoteCard from "./VoteCard";
 
 export default function DecisionPanel() {
-  const { decisions, conflicts, votes, voteOptions, outputItems, phase } = useCouncilSim();
+  const { decisions, activeConflict, votes, voteOptions, outputItems, topicSummaries, phase } = useCouncilSim();
   const readyCount = outputItems.filter((i) => i.ready).length;
   const [showReport, setShowReport] = useState(false);
 
-  const showVoting = voteOptions.length > 0 && conflicts.length > 0 &&
-    (phase === "voting" || votes.length > 0);
+  const showVoting = activeConflict !== null && voteOptions.length > 0;
 
   return (
     <aside className="flex flex-col overflow-hidden">
@@ -25,26 +24,24 @@ export default function DecisionPanel() {
 
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
 
-        {/* Conflicts */}
-        <section>
-          <SectionHeader title="Conflicts" count={conflicts.length || undefined} />
-          {conflicts.length === 0 ? (
-            <p className="text-[10px] text-slate-800 px-0.5">None detected yet.</p>
-          ) : (
+        {/* Stage summaries */}
+        {topicSummaries.length > 0 && (
+          <section>
+            <SectionHeader title="Etapy" count={topicSummaries.length} />
             <div className="space-y-2">
-              {conflicts.map((conflict) => (
-                <ConflictCard key={conflict.id} conflict={conflict} />
+              {topicSummaries.map((s, i) => (
+                <StageSummaryCard key={s.id} summary={s} delay={i * 80} />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Voting */}
         {showVoting && (
           <section>
             <SectionHeader title="Voting" count={votes.length} total={4} />
             <VoteCard
-              conflict={conflicts[0]}
+              conflict={activeConflict}
               options={voteOptions}
               votes={votes}
               phase={phase}

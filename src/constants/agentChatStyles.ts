@@ -18,6 +18,8 @@ export const FALLBACK_STYLE: AgentChatStyle = {
 export const MESSAGE_BUBBLE: Record<MessageType, string> = {
   message: "bg-slate-900/50 border border-slate-800/40",
   decision: "bg-emerald-950/40 border border-emerald-500/30",
+  conflict: "bg-amber-950/20 border border-amber-500/25",
+  conflict_result: "bg-indigo-950/20 border border-indigo-500/20",
 };
 
 export const DECISION_BADGE =

@@ -18,7 +18,7 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
 };
 
 function getTypingAgent(phase: CouncilPhase, messageCount: number): { abbr: string; role: string } | null {
-  if (phase === "idle" || phase === "voting" || phase === "output" || phase === "complete") return null;
+  if (phase === "idle" || phase === "conflict" || phase === "voting" || phase === "output" || phase === "complete") return null;
   // First two are hardcoded in the backend — safe to name them
   if (messageCount === 0) return { abbr: "PM", role: "Product Manager" };
   if (messageCount === 1) return { abbr: "CTO", role: "Technical Advisor" };
@@ -53,6 +53,7 @@ export default function CouncilChat() {
           <span className="text-[10px] text-slate-700">{messages.length} messages</span>
         )}
       </div>
+
 
       {phase === "idle" && messages.length === 0 && !submittedIdea && (
         <p className="text-xs text-slate-700 text-center py-10">

@@ -1,5 +1,6 @@
 import { AgentSidebar } from "@/components/agents";
 import { CouncilChat, PromptInput } from "@/components/council";
+import CouncilStatusBar from "@/components/council/CouncilStatusBar";
 import { DecisionPanel } from "@/components/outputs";
 import { WorkflowTimeline } from "@/components/layout";
 import PhaseStatus from "@/components/layout/PhaseStatus";
@@ -33,10 +34,7 @@ export default function Home() {
       <div className="flex-1 grid grid-cols-[260px_1fr_320px] overflow-hidden">
         <AgentSidebar />
         <section className="flex flex-col overflow-hidden border-x border-slate-800/60">
-          <div className="shrink-0 px-4 py-2.5 border-b border-slate-800/40 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Council Chat</h2>
-          </div>
+          <CouncilStatusBar />
           <CouncilChat />
           <PromptInput />
         </section>

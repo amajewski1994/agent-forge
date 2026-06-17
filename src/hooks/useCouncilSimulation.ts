@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { AgentStatus, CouncilMessage, Conflict, Decision, OutputItem, Vote, VoteOption } from "@/types";
+import type { AgentStatus, CouncilMessage, Conflict, Decision, OutputItem, TopicSummary, Vote, VoteOption } from "@/types";
 import { AGENTS } from "@/data/agents";
 
 export type CouncilPhase =
@@ -19,9 +19,12 @@ export interface CouncilSimState {
   messages: CouncilMessage[];
   decisions: Decision[];
   conflicts: Conflict[];
+  activeConflict: Conflict | null;
   votes: Vote[];
   voteOptions: VoteOption[];
   outputItems: OutputItem[];
+  topicSummaries: TopicSummary[];
+  currentTopic: { stageNumber: number; topicTitle: string } | null;
   agentStatuses: Record<string, AgentStatus>;
   isRunning: boolean;
   round: number;
@@ -101,9 +104,12 @@ export function useCouncilSimulation(): CouncilSimState {
   const [messages, setMessages] = useState<CouncilMessage[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [activeConflict, setActiveConflict] = useState<Conflict | null>(null);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
   const [outputItems, setOutputItems] = useState<OutputItem[]>(OUTPUT_ITEMS_BASE);
+  const [topicSummaries, setTopicSummaries] = useState<TopicSummary[]>([]);
+  const [currentTopic, setCurrentTopic] = useState<{ stageNumber: number; topicTitle: string } | null>(null);
   const [submittedIdea, setSubmittedIdea] = useState("");
 
   const esRef = useRef<EventSource | null>(null);
@@ -134,9 +140,12 @@ export function useCouncilSimulation(): CouncilSimState {
     setMessages([]);
     setDecisions([]);
     setConflicts([]);
+    setActiveConflict(null);
     setVotes([]);
     setVoteOptions([]);
     setOutputItems(OUTPUT_ITEMS_BASE);
+    setTopicSummaries([]);
+    setCurrentTopic(null);
 
     const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}`;
     const es = new EventSource(url);
@@ -147,14 +156,33 @@ export function useCouncilSimulation(): CouncilSimState {
       const data = JSON.parse(e.data) as Omit<CouncilMessage, "timestamp">;
       messageCountRef.current += 1;
       if (messageCountRef.current === 2) setPhase("council");
+      if (data.type === "decision") setPhase("decision");
       setMessages((prev) => [...prev, { ...data, timestamp: nowTime() }]);
     });
 
     // ── Conflict ───────────────────────────────────────────────────────────
     es.addEventListener("conflict_detected", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as Conflict;
-      setConflicts([data]);
+      setActiveConflict(data);
+      setVotes([]);
+      setVoteOptions([]);
       setPhase("conflict");
+      setMessages((prev) =>
+        prev.some((m) => m.id === -data.id)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: -data.id,
+                agentAbbr: "CONFLICT",
+                role: "Conflict Detected",
+                content: data.description,
+                timestamp: nowTime(),
+                type: "conflict" as const,
+                conflictTitle: data.title,
+              },
+            ],
+      );
     });
 
     // ── Voting ─────────────────────────────────────────────────────────────
@@ -169,16 +197,63 @@ export function useCouncilSimulation(): CouncilSimState {
       setVotes((prev) => [...prev, data]);
     });
 
-    // ── Decision ───────────────────────────────────────────────────────────
-    es.addEventListener("decision", (e: MessageEvent) => {
-      const raw = JSON.parse(e.data) as Omit<CouncilMessage, "timestamp"> & { decisions?: Decision[] };
-      const { decisions: newDecisions, ...messageData } = raw;
-      setPhase("decision");
-      if (newDecisions) setDecisions(newDecisions);
-      // Small delay so the phase indicator updates before the CEO message lands
-      schedule(() => {
-        setMessages((prev) => [...prev, { ...messageData, timestamp: nowTime() }]);
-      }, 500);
+    es.addEventListener("votes_complete", (e: MessageEvent) => {
+      const { conflictTopic, winner, tally, votes: finalVotes, options: finalOptions } = JSON.parse(e.data) as {
+        conflictTopic?: string;
+        winner: VoteOption;
+        tally: Record<string, number>;
+        votes: Vote[];
+        options: VoteOption[];
+      };
+      if (conflictTopic) {
+        setDecisions((prev) => [...prev, { id: Date.now(), text: `${conflictTopic}: ${winner.label}` }]);
+      }
+      setActiveConflict((prev) => {
+        if (prev) {
+          const resolved: Conflict = {
+            ...prev,
+            resolution: `${winner.label} (${tally.A ?? 0}-${tally.B ?? 0})`,
+            votes: finalVotes,
+            options: finalOptions,
+          };
+          setConflicts((c) =>
+            c.some((x) => x.id === resolved.id) ? c : [...c, resolved],
+          );
+          const resultMsgId = -(prev.id + 1);
+          setMessages((msgs) =>
+            msgs.some((m) => m.id === resultMsgId)
+              ? msgs
+              : [
+                  ...msgs,
+                  {
+                    id: resultMsgId,
+                    agentAbbr: "RESULT",
+                    role: "Vote Result",
+                    content: `${winner.label} wins ${tally.A ?? 0}-${tally.B ?? 0}`,
+                    timestamp: nowTime(),
+                    type: "conflict_result" as const,
+                    conflictTitle: prev.title,
+                    votes: finalVotes,
+                    options: finalOptions,
+                  },
+                ],
+          );
+        }
+        return null;
+      });
+      setPhase("council");
+    });
+
+    // ── Stage summaries ────────────────────────────────────────────────────
+    es.addEventListener("topic_start", (e: MessageEvent) => {
+      const data = JSON.parse(e.data) as { stageNumber: number; topicTitle: string };
+      setCurrentTopic(data);
+    });
+
+    es.addEventListener("stage_summary", (e: MessageEvent) => {
+      const data = JSON.parse(e.data) as TopicSummary;
+      setCurrentTopic(null);
+      setTopicSummaries((prev) => [...prev, data]);
     });
 
     // ── Output ─────────────────────────────────────────────────────────────
@@ -216,9 +291,12 @@ export function useCouncilSimulation(): CouncilSimState {
     messages,
     decisions,
     conflicts,
+    activeConflict,
     votes,
     voteOptions,
     outputItems,
+    topicSummaries,
+    currentTopic,
     agentStatuses: computeAgentStatuses(phase, messages.length, votes.length),
     isRunning: phase !== "idle" && phase !== "complete",
     round: 1,

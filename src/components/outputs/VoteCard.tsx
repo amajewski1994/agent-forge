@@ -19,8 +19,8 @@ const AGENT_TEXT: Record<string, string> = {
 };
 
 export default function VoteCard({ conflict, options, votes, phase }: VoteCardProps) {
-  const allVoted      = votes.length === 4;
-  const isCeoReviewing = allVoted && phase === "voting";
+  const regularVotes  = votes.filter((v) => !v.isTiebreaker);
+  const ceoTiebreaker = votes.find((v) => v.isTiebreaker) ?? null;
 
   const tally = useMemo(
     () =>
@@ -31,6 +31,14 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
       }),
     [options, votes],
   );
+
+  const allRegularVoted = regularVotes.length === 4;
+  const isTied = allRegularVoted && !ceoTiebreaker && (() => {
+    const counts = options.map((o) => regularVotes.filter((v) => v.optionId === o.id).length);
+    return counts.length >= 2 && counts[0] === counts[1];
+  })();
+  const allVoted        = (allRegularVoted && !isTied) || !!ceoTiebreaker;
+  const isCeoReviewing  = isTied && phase === "voting";
 
   const winnerId = allVoted
     ? tally.reduce((best, cur) => (cur.count > best.count ? cur : best)).opt.id
@@ -80,9 +88,9 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
       {votes.length > 0 && (
         <div className="border-t border-slate-800/50 px-3 py-2 space-y-2.5">
           {votes.map((vote, i) => {
-            const textColor = AGENT_TEXT[vote.agentAbbr] ?? "text-slate-400";
-            const optLabel  = options.find((o) => o.id === vote.optionId)?.label ?? vote.optionId;
-            const tallyItem = tally.find((t) => t.opt.id === vote.optionId);
+            const textColor  = AGENT_TEXT[vote.agentAbbr] ?? "text-slate-400";
+            const optLabel   = options.find((o) => o.id === vote.optionId)?.label ?? vote.optionId;
+            const tallyItem  = tally.find((t) => t.opt.id === vote.optionId);
             const isMinority = allVoted && (tallyItem?.count ?? 0) < votes.length / 2;
             return (
               <div key={i} className="animate-slide-up">
@@ -94,20 +102,25 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
                   <span className={`text-[10px] font-semibold ${isMinority ? "text-amber-400" : "text-slate-300"}`}>
                     {optLabel}
                   </span>
-                  {isMinority && (
+                  {vote.isTiebreaker && (
+                    <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded px-1 py-px">
+                      tiebreaker
+                    </span>
+                  )}
+                  {isMinority && !vote.isTiebreaker && (
                     <span className="text-[9px] font-semibold text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded px-1 py-px">
                       dissent
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-600 leading-relaxed mt-0.5 pl-[22px]">{vote.reason}</p>
+                <p className="text-[10px] text-slate-600 leading-relaxed mt-0.5 pl-5.5">{vote.reason}</p>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Tally bars — always in DOM so CSS transitions fire as pct changes */}
+      {/* Tally bars */}
       <div className="border-t border-slate-800/50 px-3 py-2.5 space-y-2">
         {tally.map(({ opt, count, pct }) => {
           const isLeading = count > 0 && count === Math.max(...tally.map((t) => t.count));
@@ -135,11 +148,11 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
         })}
       </div>
 
-      {/* CEO reviewing */}
+      {/* CEO tiebreaker reviewing */}
       {isCeoReviewing && (
         <div className="border-t border-slate-800/50 px-3 py-2 flex items-center gap-2 animate-fade-in">
           <span className="text-sm">👑</span>
-          <span className="text-[10px] text-slate-500 animate-pulse-soft">CEO reviewing votes...</span>
+          <span className="text-[10px] text-emerald-500 animate-pulse-soft">CEO casting the tiebreaker...</span>
         </div>
       )}
     </div>

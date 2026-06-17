@@ -8,4 +8,5 @@ export interface Vote {
   agentName: string;
   optionId: string;
   reason: string;
+  isTiebreaker?: boolean;
 }
