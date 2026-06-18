@@ -44,6 +44,8 @@ export interface CouncilSimState {
   agenda: AgendaItem[];
   spinnerPhase: "analyzing" | "activating" | "generating" | null;
   agendaUnlocked: boolean;
+  councilStarted: boolean;
+  councilFinished: boolean;
   start: (idea: string) => void;
   proceed: () => void;
 }
@@ -165,11 +167,14 @@ export function useCouncilSimulation(): CouncilSimState {
   const [agendaUnlocked, setAgendaUnlocked] = useState(false);
   const [activatedAgents, setActivatedAgents] = useState<string[]>([]);
   const [typingAgent, setTypingAgent] = useState<string | null>(null);
+  const [councilStarted, setCouncilStarted] = useState(false);
+  const [councilFinished, setCouncilFinished] = useState(false);
 
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sessionIdRef = useRef<string>("");
   const preCouncilRef = useRef(true);
+  const councilStartedRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -222,6 +227,9 @@ export function useCouncilSimulation(): CouncilSimState {
     setCurrentTopic(null);
     setActivatedAgents([]);
     setTypingAgent(null);
+    setCouncilStarted(false);
+    setCouncilFinished(false);
+    councilStartedRef.current = false;
 
     const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}&sessionId=${sessionId}`;
     const es = new EventSource(url);
@@ -281,6 +289,10 @@ export function useCouncilSimulation(): CouncilSimState {
 
     es.addEventListener("agent_message", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as Omit<CouncilMessage, "timestamp">;
+      if (data.agentAbbr === "PM" && !councilStartedRef.current) {
+        councilStartedRef.current = true;
+        setCouncilStarted(true);
+      }
       msgQueue.push({ kind: "message", msg: { ...data, timestamp: nowTime(), preCouncil: preCouncilRef.current } });
       if (!queueBusy) processNext();
     });
@@ -440,7 +452,13 @@ export function useCouncilSimulation(): CouncilSimState {
     });
 
     // ── Cleanup ────────────────────────────────────────────────────────────
-    es.addEventListener("done", () => {
+    es.addEventListener("done", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data?.message === "Council finished") {
+          setCouncilFinished(true);
+        }
+      } catch {}
       es.close();
       esRef.current = null;
     });
@@ -470,6 +488,8 @@ export function useCouncilSimulation(): CouncilSimState {
     agenda,
     spinnerPhase,
     agendaUnlocked,
+    councilStarted,
+    councilFinished,
     start,
     proceed,
   };

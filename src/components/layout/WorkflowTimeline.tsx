@@ -32,10 +32,24 @@ const PHASE_STEPS: Record<CouncilPhase, WorkflowStepStatus[]> = {
 };
 
 export default function WorkflowTimeline() {
-  const { phase } = useCouncilSim();
+  const { phase, agendaUnlocked, councilStarted, councilFinished } = useCouncilSim();
+
+  const analysisStatus: WorkflowStepStatus =
+    agendaUnlocked ? "done"
+    : (phase === "analysis" || phase === "activating") ? "active"
+    : "pending";
+
+  const councilStatus: WorkflowStepStatus =
+    councilFinished ? "done" : (councilStarted && agendaUnlocked) ? "active" : "pending";
+
+  const outputStatus: WorkflowStepStatus =
+    phase === "complete" ? "done" : phase === "output" ? "active" : "pending";
+
+  const DYNAMIC: Record<number, WorkflowStepStatus> = { 1: analysisStatus, 2: councilStatus, 3: outputStatus };
+
   const steps = WORKFLOW_STEPS.map((step, i) => ({
     ...step,
-    status: PHASE_STEPS[phase][i],
+    status: DYNAMIC[i] ?? PHASE_STEPS[phase][i],
   }));
 
   return (
