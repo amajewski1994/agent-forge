@@ -1,12 +1,23 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { AgentStatus, CouncilMessage, Conflict, Decision, OutputItem, TopicSummary, Vote, VoteOption } from "@/types";
+import type {
+  AgendaItem,
+  AgentStatus,
+  CouncilMessage,
+  Conflict,
+  Decision,
+  OutputItem,
+  TopicSummary,
+  Vote,
+  VoteOption,
+} from "@/types";
 import { AGENTS } from "@/data/agents";
 
 export type CouncilPhase =
   | "idle"
   | "analysis"
+  | "activating"
   | "council"
   | "conflict"
   | "voting"
@@ -27,10 +38,12 @@ export interface CouncilSimState {
   topicSummaries: TopicSummary[];
   currentTopic: { stageNumber: number; topicTitle: string } | null;
   agentStatuses: Record<string, AgentStatus>;
+  typingAgent: string | null;
   isRunning: boolean;
-  round: number;
-  agentReadyCount: number;
   submittedIdea: string;
+  agenda: AgendaItem[];
+  spinnerPhase: "analyzing" | "activating" | "generating" | null;
+  agendaUnlocked: boolean;
   start: (idea: string) => void;
   proceed: () => void;
 }
@@ -40,56 +53,86 @@ const VOTE_ORDER_ABBRS = ["PM", "CTO", "DES", "QA"];
 
 function computeAgentStatuses(
   phase: CouncilPhase,
-  messageCount: number,
-  voteCount: number,
+  activatedAgents: string[],
 ): Record<string, AgentStatus> {
-  if (phase === "idle") {
+  if (phase === "idle" || phase === "analysis") {
     return Object.fromEntries(AGENTS.map((a) => [a.abbr, "idle" as AgentStatus]));
   }
-  if (phase === "complete") {
+  if (phase === "activating") {
+    const activatedSet = new Set(activatedAgents);
+    return Object.fromEntries(
+      AGENTS.map((a) => [
+        a.abbr,
+        a.abbr !== "ENG" && activatedSet.has(a.abbr) ? "active" : "idle" as AgentStatus,
+      ]),
+    );
+  }
+  if (phase === "output" || phase === "complete") {
     return Object.fromEntries(AGENTS.map((a) => [a.abbr, "active" as AgentStatus]));
   }
-  if (phase === "output") {
-    const statuses: Record<string, AgentStatus> = Object.fromEntries(
-      SPEAKING_ORDER_ABBRS.map((abbr) => [abbr, "active" as AgentStatus]),
-    );
-    statuses["ENG"] = "thinking";
-    return statuses;
-  }
-  if (phase === "voting") {
-    return Object.fromEntries(
-      AGENTS.map((a) => {
-        if (a.abbr === "CEO") return [a.abbr, "thinking" as AgentStatus];
-        if (a.abbr === "ENG") return [a.abbr, "idle" as AgentStatus];
-        const idx = VOTE_ORDER_ABBRS.indexOf(a.abbr);
-        if (idx === -1) return [a.abbr, "idle" as AgentStatus];
-        if (idx < voteCount) return [a.abbr, "active" as AgentStatus];
-        if (idx === voteCount) return [a.abbr, "thinking" as AgentStatus];
-        return [a.abbr, "idle" as AgentStatus];
-      }),
-    );
-  }
-  // analysis | council | conflict | decision — sequential speaking order
+  // awaiting_proceed | council | conflict | voting | decision
   return Object.fromEntries(
-    AGENTS.map((a) => {
-      const idx = SPEAKING_ORDER_ABBRS.indexOf(a.abbr);
-      if (idx === -1) return [a.abbr, "idle" as AgentStatus];
-      if (idx < messageCount) return [a.abbr, "active" as AgentStatus];
-      if (idx === messageCount) return [a.abbr, "thinking" as AgentStatus];
-      return [a.abbr, "idle" as AgentStatus];
-    }),
+    AGENTS.map((a) => [a.abbr, a.abbr === "ENG" ? "idle" : "active" as AgentStatus]),
   );
 }
 
 const OUTPUT_ITEMS_BASE: OutputItem[] = [
-  { id: 1, title: "PRD", subtitle: "Product Requirements", icon: "📄", ready: false },
-  { id: 2, title: "MVP Scope", subtitle: "Core features", icon: "🎯", ready: false },
-  { id: 3, title: "User Flow", subtitle: "User journey", icon: "🔀", ready: false },
-  { id: 4, title: "Architecture", subtitle: "System design", icon: "🏗️", ready: false },
-  { id: 5, title: "DB Schema", subtitle: "Database structure", icon: "🗄️", ready: false },
-  { id: 6, title: "API Endpoints", subtitle: "REST API specs", icon: "🔌", ready: false },
-  { id: 7, title: "Backlog", subtitle: "Development tasks", icon: "📋", ready: false },
-  { id: 8, title: "Impl. Plan", subtitle: "Step-by-step plan", icon: "🗺️", ready: false },
+  {
+    id: 1,
+    title: "PRD",
+    subtitle: "Product Requirements",
+    icon: "📄",
+    ready: false,
+  },
+  {
+    id: 2,
+    title: "MVP Scope",
+    subtitle: "Core features",
+    icon: "🎯",
+    ready: false,
+  },
+  {
+    id: 3,
+    title: "User Flow",
+    subtitle: "User journey",
+    icon: "🔀",
+    ready: false,
+  },
+  {
+    id: 4,
+    title: "Architecture",
+    subtitle: "System design",
+    icon: "🏗️",
+    ready: false,
+  },
+  {
+    id: 5,
+    title: "DB Schema",
+    subtitle: "Database structure",
+    icon: "🗄️",
+    ready: false,
+  },
+  {
+    id: 6,
+    title: "API Endpoints",
+    subtitle: "REST API specs",
+    icon: "🔌",
+    ready: false,
+  },
+  {
+    id: 7,
+    title: "Backlog",
+    subtitle: "Development tasks",
+    icon: "📋",
+    ready: false,
+  },
+  {
+    id: 8,
+    title: "Impl. Plan",
+    subtitle: "Step-by-step plan",
+    icon: "🗺️",
+    ready: false,
+  },
 ];
 
 function nowTime(): string {
@@ -109,15 +152,24 @@ export function useCouncilSimulation(): CouncilSimState {
   const [activeConflict, setActiveConflict] = useState<Conflict | null>(null);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
-  const [outputItems, setOutputItems] = useState<OutputItem[]>(OUTPUT_ITEMS_BASE);
+  const [outputItems, setOutputItems] =
+    useState<OutputItem[]>(OUTPUT_ITEMS_BASE);
   const [topicSummaries, setTopicSummaries] = useState<TopicSummary[]>([]);
-  const [currentTopic, setCurrentTopic] = useState<{ stageNumber: number; topicTitle: string } | null>(null);
+  const [currentTopic, setCurrentTopic] = useState<{
+    stageNumber: number;
+    topicTitle: string;
+  } | null>(null);
   const [submittedIdea, setSubmittedIdea] = useState("");
+  const [agenda, setAgenda] = useState<AgendaItem[]>([]);
+  const [spinnerPhase, setSpinnerPhase] = useState<"analyzing" | "activating" | "generating" | null>(null);
+  const [agendaUnlocked, setAgendaUnlocked] = useState(false);
+  const [activatedAgents, setActivatedAgents] = useState<string[]>([]);
+  const [typingAgent, setTypingAgent] = useState<string | null>(null);
 
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const messageCountRef = useRef(0);
   const sessionIdRef = useRef<string>("");
+  const preCouncilRef = useRef(true);
 
   useEffect(() => {
     return () => {
@@ -129,6 +181,7 @@ export function useCouncilSimulation(): CouncilSimState {
   const proceed = useCallback(() => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return;
+    preCouncilRef.current = false;
     setPhase("council");
     fetch(`${BACKEND_URL}/api/council/proceed`, {
       method: "POST",
@@ -142,9 +195,10 @@ export function useCouncilSimulation(): CouncilSimState {
     esRef.current = null;
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    messageCountRef.current = 0;
+    preCouncilRef.current = true;
 
-    const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const sessionId =
+      Date.now().toString(36) + Math.random().toString(36).slice(2);
     sessionIdRef.current = sessionId;
 
     const schedule = (fn: () => void, ms: number) => {
@@ -152,7 +206,10 @@ export function useCouncilSimulation(): CouncilSimState {
     };
 
     // Reset all state
-    setSubmittedIdea(idea);
+    setSubmittedIdea(idea.charAt(0).toUpperCase() + idea.slice(1));
+    setAgenda([]);
+    setSpinnerPhase("analyzing");
+    setAgendaUnlocked(false);
     setPhase("analysis");
     setMessages([]);
     setDecisions([]);
@@ -163,18 +220,69 @@ export function useCouncilSimulation(): CouncilSimState {
     setOutputItems(OUTPUT_ITEMS_BASE);
     setTopicSummaries([]);
     setCurrentTopic(null);
+    setActivatedAgents([]);
+    setTypingAgent(null);
 
     const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}&sessionId=${sessionId}`;
     const es = new EventSource(url);
     esRef.current = es;
 
-    // ── Chat messages ──────────────────────────────────────────────────────
+    // ── Chat messages — queue held until after activation ─────────────────
+    type QueueItem =
+      | { kind: "message"; msg: CouncilMessage }
+      | { kind: "phase"; value: CouncilPhase };
+
+    const msgQueue: QueueItem[] = [];
+    let queueBusy = true; // held until activation completes
+
+    const processNext = () => {
+      if (msgQueue.length === 0) {
+        queueBusy = false;
+        setTypingAgent(null);
+        return;
+      }
+      queueBusy = true;
+      const item = msgQueue.shift()!;
+
+      if (item.kind === "phase") {
+        setTypingAgent(null);
+        setPhase(item.value);
+        timers.current.push(setTimeout(processNext, 50));
+        return;
+      }
+
+      const { msg } = item;
+
+      // CEO decision: set phase first, show typing dots for 3s, then reveal
+      if (msg.type === "decision") {
+        setPhase("decision");
+        setTypingAgent(msg.agentAbbr);
+        timers.current.push(setTimeout(() => {
+          setTypingAgent(null);
+          setMessages((prev) => [...prev, msg]);
+          timers.current.push(setTimeout(processNext, 50));
+        }, 3000));
+        return;
+      }
+
+      // All other messages: show typing dots for 2s, then reveal message
+      setTypingAgent(msg.agentAbbr);
+      timers.current.push(setTimeout(() => {
+        setTypingAgent(null);
+        setMessages((prev) => [...prev, msg]);
+        timers.current.push(setTimeout(processNext, 50));
+      }, 2000));
+    };
+
+    es.addEventListener("agenda_ready", (e: MessageEvent) => {
+      const data = JSON.parse(e.data) as AgendaItem[];
+      setAgenda(data);
+    });
+
     es.addEventListener("agent_message", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as Omit<CouncilMessage, "timestamp">;
-      messageCountRef.current += 1;
-      if (messageCountRef.current === 2) setPhase("council");
-      if (data.type === "decision") setPhase("decision");
-      setMessages((prev) => [...prev, { ...data, timestamp: nowTime() }]);
+      msgQueue.push({ kind: "message", msg: { ...data, timestamp: nowTime(), preCouncil: preCouncilRef.current } });
+      if (!queueBusy) processNext();
     });
 
     // ── Conflict ───────────────────────────────────────────────────────────
@@ -215,7 +323,13 @@ export function useCouncilSimulation(): CouncilSimState {
     });
 
     es.addEventListener("votes_complete", (e: MessageEvent) => {
-      const { conflictTopic, winner, tally, votes: finalVotes, options: finalOptions } = JSON.parse(e.data) as {
+      const {
+        conflictTopic,
+        winner,
+        tally,
+        votes: finalVotes,
+        options: finalOptions,
+      } = JSON.parse(e.data) as {
         conflictTopic?: string;
         winner: VoteOption;
         tally: Record<string, number>;
@@ -223,7 +337,10 @@ export function useCouncilSimulation(): CouncilSimState {
         options: VoteOption[];
       };
       if (conflictTopic) {
-        setDecisions((prev) => [...prev, { id: Date.now(), text: `${conflictTopic}: ${winner.label}` }]);
+        setDecisions((prev) => [
+          ...prev,
+          { id: Date.now(), text: `${conflictTopic}: ${winner.label}` },
+        ]);
       }
       setActiveConflict((prev) => {
         if (prev) {
@@ -261,14 +378,38 @@ export function useCouncilSimulation(): CouncilSimState {
       setPhase("council");
     });
 
-    // ── Proceed gate ───────────────────────────────────────────────────────
+    // ── Proceed gate — activate agents, then show "Generating agenda…", then drain PM messages ─
     es.addEventListener("awaiting_proceed", () => {
-      setPhase("awaiting_proceed");
+      const agentsToActivate = AGENTS.filter((a) => a.abbr !== "ENG");
+      setPhase("activating");
+      setSpinnerPhase("activating");
+      agentsToActivate.forEach((agent, idx) => {
+        schedule(() => {
+          setActivatedAgents((prev) => [...prev, agent.abbr]);
+        }, (idx + 1) * 600);
+      });
+      const totalActivationMs = (agentsToActivate.length + 1) * 600;
+      // Spinner → "Generating agenda…" + reveal agenda in sidebar
+      schedule(() => {
+        setSpinnerPhase("generating");
+        setAgendaUnlocked(true);
+      }, totalActivationMs);
+      // Spinner disappears
+      schedule(() => setSpinnerPhase(null), totalActivationMs + 1500);
+      // 1s after spinner hides: start draining PM messages
+      schedule(() => {
+        msgQueue.push({ kind: "phase", value: "awaiting_proceed" });
+        queueBusy = false;
+        processNext();
+      }, totalActivationMs + 2500);
     });
 
     // ── Stage summaries ────────────────────────────────────────────────────
     es.addEventListener("topic_start", (e: MessageEvent) => {
-      const data = JSON.parse(e.data) as { stageNumber: number; topicTitle: string };
+      const data = JSON.parse(e.data) as {
+        stageNumber: number;
+        topicTitle: string;
+      };
       setCurrentTopic(data);
     });
 
@@ -284,9 +425,12 @@ export function useCouncilSimulation(): CouncilSimState {
         setPhase("output");
         OUTPUT_ITEMS_BASE.forEach((_, idx) => {
           schedule(
-            () => setOutputItems((prev) =>
-              prev.map((item, i) => (i === idx ? { ...item, ready: true } : item))
-            ),
+            () =>
+              setOutputItems((prev) =>
+                prev.map((item, i) =>
+                  i === idx ? { ...item, ready: true } : item,
+                ),
+              ),
             idx * 500,
           );
         });
@@ -319,11 +463,13 @@ export function useCouncilSimulation(): CouncilSimState {
     outputItems,
     topicSummaries,
     currentTopic,
-    agentStatuses: computeAgentStatuses(phase, messages.length, votes.length),
+    agentStatuses: computeAgentStatuses(phase, activatedAgents),
+    typingAgent,
     isRunning: phase !== "idle" && phase !== "complete",
-    round: 1,
-    agentReadyCount: messages.length,
     submittedIdea,
+    agenda,
+    spinnerPhase,
+    agendaUnlocked,
     start,
     proceed,
   };

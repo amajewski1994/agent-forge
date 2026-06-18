@@ -20,7 +20,8 @@ function getStatus(
   }
   switch (phase) {
     case "idle":     return null;
-    case "analysis": return { label: "Analizowanie",          color: "text-amber-400",   pulse: true  };
+    case "analysis":   return { label: "Analizowanie",          color: "text-amber-400",   pulse: true  };
+    case "activating": return { label: "Uruchamianie agentów", color: "text-amber-400",   pulse: true  };
     case "council":  return { label: "Debata",                color: "text-emerald-400", pulse: true  };
     case "conflict": return { label: "Wykryto konflikt",      color: "text-amber-400",   pulse: true  };
     case "voting":   return { label: "Głosowanie",            color: "text-violet-400",  pulse: true  };

@@ -49,5 +49,14 @@ body {
   .animate-fade-in   { animation: fade-in   0.25s ease-out both; }
   .animate-slide-up  { animation: slide-up  0.30s ease-out both; }
   .animate-scale-in  { animation: scale-in  0.25s ease-out both; }
+  .animate-reveal    { animation: slide-up  0.55s ease-out both; }
   .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -11,9 +11,8 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
   { id: 1, label: "Input", sublabel: "Idea received", status: "done" },
   { id: 2, label: "Analysis", sublabel: "Requirements", status: "done" },
   { id: 3, label: "Council", sublabel: "In progress", status: "active" },
-  { id: 4, label: "Decisions", sublabel: "Pending", status: "pending" },
-  { id: 5, label: "Output", sublabel: "Generation", status: "pending" },
-  { id: 6, label: "Review", sublabel: "Final check", status: "pending" },
+  { id: 4, label: "Output", sublabel: "Generation", status: "pending" },
+  { id: 5, label: "Review", sublabel: "Final check", status: "pending" },
 ];
 
 export const STEP_STYLES: Record<WorkflowStepStatus, { circle: string; label: string; connector: string }> = {

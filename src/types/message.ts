@@ -9,6 +9,7 @@ export interface CouncilMessage {
   content: string;
   timestamp: string;
   type: MessageType;
+  preCouncil?: boolean;
   // Only present on conflict_result type
   conflictTitle?: string;
   votes?: Vote[];

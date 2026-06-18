@@ -4,11 +4,12 @@ import { useEffect, useRef } from "react";
 import { useCouncilSim } from "@/context/CouncilSimContext";
 import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 import MessageBubble from "./MessageBubble";
-import TypingIndicator from "./TypingIndicator";
+import AgentMessageAvatar from "./AgentMessageAvatar";
 
 const PHASE_HEADER: Record<CouncilPhase, string> = {
   idle:             "Waiting to start",
   analysis:         "Analyzing requirements",
+  activating:       "Activating agents",
   council:          "Council in debate",
   conflict:         "Resolving conflict",
   voting:           "Agents voting",
@@ -18,26 +19,21 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
   complete:         "Session complete",
 };
 
-function getTypingAgent(phase: CouncilPhase, messageCount: number): { abbr: string; role: string } | null {
-  if (phase === "idle" || phase === "conflict" || phase === "voting" || phase === "awaiting_proceed" || phase === "output" || phase === "complete") return null;
-  // First two are hardcoded in the backend — safe to name them
-  if (messageCount === 0) return { abbr: "PM", role: "Product Manager" };
-  if (messageCount === 1) return { abbr: "CTO", role: "Technical Advisor" };
-  // Dynamic order from here — don't guess who's next
-  return { abbr: "···", role: "Agent" };
-}
+const COUNCIL_THINKING_PHASES: CouncilPhase[] = ["council", "conflict", "voting"];
 
 export default function CouncilChat() {
-  const { messages, phase, submittedIdea, proceed } = useCouncilSim();
+  const { messages, phase, submittedIdea, proceed, typingAgent, isRunning, spinnerPhase } = useCouncilSim();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const typingAgent = getTypingAgent(phase, messages.length);
+
+  const showCouncilThinking =
+    isRunning && !typingAgent && COUNCIL_THINKING_PHASES.includes(phase);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, typingAgent]);
+  }, [messages.length, typingAgent, phase]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-3">
       <div className="flex items-center gap-3 pb-1">
         <div className="flex items-center gap-2">
           <div
@@ -84,8 +80,43 @@ export default function CouncilChat() {
         </div>
       ))}
 
+      {showCouncilThinking && (
+        <div className="flex justify-center items-center gap-2.5 py-1 animate-fade-in">
+          <div className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 animate-bounce [animation-delay:0ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 animate-bounce [animation-delay:150ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 animate-bounce [animation-delay:300ms]" />
+          </div>
+          <span className="text-[11px] text-slate-600 italic">Council is thinking...</span>
+        </div>
+      )}
+
       {typingAgent && (
-        <TypingIndicator agentAbbr={typingAgent.abbr} agentRole={typingAgent.role} />
+        <div className="flex gap-3 animate-fade-in">
+          <AgentMessageAvatar agentAbbr={typingAgent} />
+          <div className="flex items-center">
+            <div className="rounded-xl rounded-tl-sm px-3.5 py-3 bg-slate-900/50 border border-slate-800/40">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-600 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-600 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-600 animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {spinnerPhase !== null && messages.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 animate-fade-in">
+          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-indigo-400 animate-spin" />
+          <span className="text-xs text-slate-500">
+            {spinnerPhase === "generating"
+              ? "Generating agenda…"
+              : spinnerPhase === "activating"
+              ? "Activating council…"
+              : "Analyzing your idea…"}
+          </span>
+        </div>
       )}
 
       {phase === "awaiting_proceed" && (

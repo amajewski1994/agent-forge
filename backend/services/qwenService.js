@@ -11,7 +11,7 @@ async function callQwen({ systemPrompt, userPrompt }) {
   }
 
   const response = await client.chat.completions.create({
-    model: process.env.QWEN_MODEL_PROD || "qwen-flash",
+    model: process.env.QWEN_MODEL_TEST || "qwen-flash",
     messages: [
       {
         role: "system",

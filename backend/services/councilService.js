@@ -171,7 +171,7 @@ function formatAgendaMessage(agenda) {
   const list = agenda
     .map((topic, idx) => `${idx + 1}. ${topic.title}`)
     .join("\n");
-  return `Oto nasza agenda na to spotkanie. Przejdziemy po kolei przez te punkty:\n\n${list}\n\nZaczynamy od pierwszego.`;
+  return `Oto nasza agenda na to spotkanie. Przejdziemy po kolei przez te punkty:\n\n${list}`;
 }
 
 async function classifyProject(idea) {
@@ -273,6 +273,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
 
   const agenda = await buildAgenda(idea, projectCategory.category);
   console.log("[Council Agenda]", JSON.stringify(agenda, null, 2));
+  send("agenda_ready", agenda);
 
   const pmIdeaIntro = await generatePMIdeaIntro({ idea });
   sendMessage({
@@ -290,10 +291,21 @@ async function buildCouncilWorkflow(idea, options = {}) {
     type: "message",
   });
 
-  // TODO: testing only — run the first agenda topic, not the full agenda.
-  const topicsToRun = agenda.slice(0, 2);
+  const topicsToRun = agenda.slice(0, 1);
+
+  if (waitForProceed) {
+    sendMessage({
+      id: nextMessageId++,
+      agentAbbr: "PM",
+      role: "Product Manager",
+      content: `Czy możemy przejść do pierwszego punktu: „${topicsToRun[0]?.title}"?`,
+      type: "message",
+    });
+    send("awaiting_proceed", {});
+    await waitForProceed();
+  }
   const minRelevance = 5;
-  const maxResponsesPerAgentPerTopic = 3;
+  const maxResponsesPerAgentPerTopic = 4;
   const maxRepliesPerTopic = 6;
   let stageNumber = 0;
 

@@ -4,14 +4,16 @@ import { useCouncilSim } from "@/context/CouncilSimContext";
 import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
 
 const PHASE_LABEL: Record<CouncilPhase, string> = {
-  idle:     "Ready",
-  analysis: "Phase: Analysis",
-  council:  "Phase: Discussion",
-  conflict: "Phase: Resolution",
-  voting:   "Phase: Voting",
-  decision: "Phase: Decision",
-  output:   "Phase: Output",
-  complete: "Complete",
+  idle:             "Ready",
+  analysis:         "Phase: Analysis",
+  activating:       "Phase: Analysis",
+  council:          "Phase: Discussion",
+  conflict:         "Phase: Resolution",
+  voting:           "Phase: Voting",
+  decision:         "Phase: Decision",
+  awaiting_proceed: "Phase: Decision",
+  output:           "Phase: Output",
+  complete:         "Complete",
 };
 
 export default function PhaseStatus() {
