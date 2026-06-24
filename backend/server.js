@@ -3,6 +3,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { buildCouncilWorkflow } = require("./services/councilService");
+const { callQwen } = require("./services/qwenService");
+const { PRD_GENERATION_SYSTEM_PROMPT, PRD_GENERATION_USER_PROMPT } = require("./services/prompts");
+const { extractJson } = require("./utils/councilUtils");
 
 const app = express();
 
@@ -24,6 +27,28 @@ app.post("/api/council/proceed", (req, res) => {
     res.json({ ok: true });
   } else {
     res.status(404).json({ error: "Session not found" });
+  }
+});
+
+app.post("/api/council/generate-prd", async (req, res) => {
+  const { idea, topicSummaries, decisions } = req.body;
+
+  if (!idea || !Array.isArray(topicSummaries)) {
+    return res.status(400).json({ error: "Missing required fields: idea, topicSummaries" });
+  }
+
+  try {
+    const result = await callQwen({
+      systemPrompt: PRD_GENERATION_SYSTEM_PROMPT,
+      userPrompt: PRD_GENERATION_USER_PROMPT({ idea, topicSummaries, decisions: decisions || [] }),
+      maxTokens: 2000,
+    });
+
+    const prd = JSON.parse(extractJson(result));
+    res.json({ prd });
+  } catch (error) {
+    console.error("PRD generation error:", error);
+    res.status(500).json({ error: error.message || "PRD generation failed" });
   }
 });
 

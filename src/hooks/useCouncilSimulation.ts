@@ -12,6 +12,7 @@ import type {
   Vote,
   VoteOption,
 } from "@/types";
+import type { MvpReport } from "@/lib/report";
 import { AGENTS } from "@/data/agents";
 
 export type CouncilPhase =
@@ -46,6 +47,9 @@ export interface CouncilSimState {
   agendaUnlocked: boolean;
   councilStarted: boolean;
   councilFinished: boolean;
+  prd: MvpReport | null;
+  isPrdGenerating: boolean;
+  generatePrd: () => void;
   start: (idea: string) => void;
   proceed: () => void;
 }
@@ -169,12 +173,20 @@ export function useCouncilSimulation(): CouncilSimState {
   const [typingAgent, setTypingAgent] = useState<string | null>(null);
   const [councilStarted, setCouncilStarted] = useState(false);
   const [councilFinished, setCouncilFinished] = useState(false);
+  const [prd, setPrd] = useState<MvpReport | null>(null);
+  const [isPrdGenerating, setIsPrdGenerating] = useState(false);
 
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const sessionIdRef = useRef<string>("");
   const preCouncilRef = useRef(true);
   const councilStartedRef = useRef(false);
+  // Always-fresh snapshot of data needed for PRD generation (avoids stale closures)
+  const prdDataRef = useRef<{
+    idea: string;
+    topicSummaries: TopicSummary[];
+    decisions: Decision[];
+  }>({ idea: "", topicSummaries: [], decisions: [] });
 
   useEffect(() => {
     return () => {
@@ -195,6 +207,21 @@ export function useCouncilSimulation(): CouncilSimState {
     }).catch(console.error);
   }, []);
 
+  const generatePrd = useCallback(() => {
+    const { idea, topicSummaries, decisions } = prdDataRef.current;
+    setIsPrdGenerating(true);
+    setPrd(null);
+    fetch(`${BACKEND_URL}/api/council/generate-prd`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea, topicSummaries, decisions }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data.prd) setPrd(data.prd); })
+      .catch(console.error)
+      .finally(() => setIsPrdGenerating(false));
+  }, []);
+
   const start = useCallback((idea: string) => {
     esRef.current?.close();
     esRef.current = null;
@@ -211,7 +238,8 @@ export function useCouncilSimulation(): CouncilSimState {
     };
 
     // Reset all state
-    setSubmittedIdea(idea.charAt(0).toUpperCase() + idea.slice(1));
+    const normalizedIdea = idea.charAt(0).toUpperCase() + idea.slice(1);
+    setSubmittedIdea(normalizedIdea);
     setAgenda([]);
     setSpinnerPhase("analyzing");
     setAgendaUnlocked(false);
@@ -229,7 +257,10 @@ export function useCouncilSimulation(): CouncilSimState {
     setTypingAgent(null);
     setCouncilStarted(false);
     setCouncilFinished(false);
+    setPrd(null);
+    setIsPrdGenerating(false);
     councilStartedRef.current = false;
+    prdDataRef.current = { idea: normalizedIdea, topicSummaries: [], decisions: [] };
 
     const url = `${BACKEND_URL}/api/council/start?idea=${encodeURIComponent(idea)}&sessionId=${sessionId}`;
     const es = new EventSource(url);
@@ -349,10 +380,12 @@ export function useCouncilSimulation(): CouncilSimState {
         options: VoteOption[];
       };
       if (conflictTopic) {
-        setDecisions((prev) => [
-          ...prev,
-          { id: Date.now(), text: `${conflictTopic}: ${winner.label}` },
-        ]);
+        const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
+        setDecisions((prev) => {
+          const next = [...prev, newDecision];
+          prdDataRef.current.decisions = next;
+          return next;
+        });
       }
       setActiveConflict((prev) => {
         if (prev) {
@@ -428,11 +461,16 @@ export function useCouncilSimulation(): CouncilSimState {
     es.addEventListener("stage_summary", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as TopicSummary;
       setCurrentTopic(null);
-      setTopicSummaries((prev) => [...prev, data]);
+      setTopicSummaries((prev) => {
+        const next = [...prev, data];
+        prdDataRef.current.topicSummaries = next;
+        return next;
+      });
     });
 
     // ── Output ─────────────────────────────────────────────────────────────
     es.addEventListener("final_output", () => {
+      generatePrd();
       schedule(() => {
         setPhase("output");
         OUTPUT_ITEMS_BASE.forEach((_, idx) => {
@@ -468,7 +506,7 @@ export function useCouncilSimulation(): CouncilSimState {
       esRef.current = null;
       setPhase("complete");
     };
-  }, []);
+  }, [generatePrd]);
 
   return {
     phase,
@@ -490,6 +528,9 @@ export function useCouncilSimulation(): CouncilSimState {
     agendaUnlocked,
     councilStarted,
     councilFinished,
+    prd,
+    isPrdGenerating,
+    generatePrd,
     start,
     proceed,
   };

@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useCouncilSim } from "@/context/CouncilSimContext";
-import { generateReport, exportMarkdown } from "@/lib/report";
+import { exportMarkdown } from "@/lib/report";
 
 interface ReportPreviewModalProps {
   onClose: () => void;
 }
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function Section({ title, children }: SectionProps) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-7">
       <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-3">{title}</h3>
@@ -39,12 +34,7 @@ function CodeBlock({ children }: { children: React.ReactNode }) {
 }
 
 export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps) {
-  const { decisions, conflicts } = useCouncilSim();
-
-  const report = useMemo(
-    () => generateReport(decisions, conflicts),
-    [decisions, conflicts],
-  );
+  const { prd } = useCouncilSim();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -53,6 +43,8 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  if (!prd) return null;
 
   return (
     <div
@@ -65,12 +57,12 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/60 shrink-0">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">MVP Report</h2>
-            <p className="text-[10px] text-slate-500 mt-0.5">Product Strategy Session — Council Output</p>
+            <h2 className="text-sm font-semibold text-slate-100">{prd.title}</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Product Requirements Document — AI Council Output</p>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => exportMarkdown(report)}
+              onClick={() => exportMarkdown(prd)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition-colors"
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -92,19 +84,19 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
 
-          <Section title="Product Summary">
-            <p className="text-[12px] text-slate-300 leading-relaxed">{report.productSummary}</p>
+          <Section title="Podsumowanie produktu">
+            <p className="text-[12px] text-slate-300 leading-relaxed">{prd.productSummary}</p>
           </Section>
 
-          <Section title="MVP Scope">
+          <Section title="Zakres MVP">
             <div className="flex flex-wrap gap-2">
-              {report.mvpScope.map((item, i) => <Tag key={i}>{item}</Tag>)}
+              {prd.mvpScope.map((item: string, i: number) => <Tag key={i}>{item}</Tag>)}
             </div>
           </Section>
 
           <Section title="User Flow">
             <div className="space-y-1.5">
-              {report.userFlow.map((step, i) => (
+              {prd.userFlow.map((step: string, i: number) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
                     <span className="text-[8px] font-bold text-indigo-400">{i + 1}</span>
@@ -117,21 +109,21 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
             </div>
           </Section>
 
-          <Section title="Architecture">
-            <CodeBlock>{report.architecture}</CodeBlock>
+          <Section title="Architektura">
+            <CodeBlock>{prd.architecture}</CodeBlock>
           </Section>
 
-          <Section title="Database Schema">
+          <Section title="Schemat bazy danych">
             <div className="space-y-1.5">
-              {report.dbSchema.map((row, i) => (
+              {prd.dbSchema.map((row: string, i: number) => (
                 <p key={i} className="font-mono text-[11px] text-slate-400 bg-slate-950/40 rounded-lg px-3 py-1.5">{row}</p>
               ))}
             </div>
           </Section>
 
-          <Section title="API Endpoints">
+          <Section title="Endpointy API">
             <div className="space-y-1.5">
-              {report.apiEndpoints.map((ep, i) => (
+              {prd.apiEndpoints.map((ep: string, i: number) => (
                 <p key={i} className="font-mono text-[11px] text-slate-400 bg-slate-950/40 rounded-lg px-3 py-1.5">{ep}</p>
               ))}
             </div>
@@ -139,7 +131,7 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
 
           <Section title="Backlog">
             <div className="space-y-1.5">
-              {report.backlog.map((item, i) => (
+              {prd.backlog.map((item: string, i: number) => (
                 <div key={i} className="flex items-start gap-2">
                   <div className="w-3.5 h-3.5 rounded border border-slate-700 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-slate-300 leading-relaxed">{item.replace(/^\[.\]\s*/, "")}</p>
@@ -148,22 +140,22 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
             </div>
           </Section>
 
-          <Section title="Implementation Plan">
+          <Section title="Plan implementacji">
             <div className="space-y-2">
-              {report.implementationPlan.map((phase, i) => (
+              {prd.implementationPlan.map((phase: string, i: number) => (
                 <div key={i} className="flex items-start gap-3 rounded-xl bg-slate-800/40 border border-slate-700/40 px-3 py-2.5">
                   <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded px-1.5 py-0.5 shrink-0 mt-0.5">
-                    W{i + 1}
+                    F{i + 1}
                   </span>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">{phase.replace(/^Week \d+ — /, "")}</p>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">{phase.replace(/^(Week \d+ — |Faza \d+ — )/, "")}</p>
                 </div>
               ))}
             </div>
           </Section>
 
-          <Section title="Risks & Open Questions">
+          <Section title="Ryzyka">
             <div className="space-y-2">
-              {report.risks.map((risk, i) => (
+              {prd.risks.map((risk: string, i: number) => (
                 <div key={i} className="flex items-start gap-2.5 rounded-xl bg-amber-950/20 border border-amber-500/15 px-3 py-2">
                   <svg className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -174,7 +166,7 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
             </div>
           </Section>
 
-          <p className="text-center text-[10px] text-slate-700 mt-2">Generated by AgentForge — AI Product Council</p>
+          <p className="text-center text-[10px] text-slate-700 mt-2">Wygenerowane przez AgentForge — AI Product Council</p>
         </div>
       </div>
     </div>

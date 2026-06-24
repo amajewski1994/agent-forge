@@ -5,7 +5,7 @@ const client = new OpenAI({
   baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
 });
 
-async function callQwen({ systemPrompt, userPrompt }) {
+async function callQwen({ systemPrompt, userPrompt, maxTokens }) {
   if (!process.env.QWEN_API_KEY) {
     throw new Error("Missing QWEN_API_KEY in .env");
   }
@@ -23,7 +23,7 @@ async function callQwen({ systemPrompt, userPrompt }) {
       },
     ],
     temperature: 0.3,
-    max_tokens: Number(process.env.QWEN_MAX_TOKENS) || 250,
+    max_tokens: maxTokens || Number(process.env.QWEN_MAX_TOKENS) || 250,
   });
 
   return response.choices[0].message.content;

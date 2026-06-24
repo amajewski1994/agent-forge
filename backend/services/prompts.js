@@ -691,6 +691,74 @@ Agent's message:
 Does this message stay within the agent's assigned area? Return JSON only.
 `;
 
+// ─── PRD generation ───────────────────────────────────────────────────────────
+
+const PRD_GENERATION_SYSTEM_PROMPT = `
+You are a Senior Product Manager writing a Product Requirements Document (PRD).
+You are synthesizing the decisions and discussion from a product council session into a structured document.
+
+Return ONLY valid JSON. No markdown. No explanation. No code fences.
+
+Response shape:
+{
+  "title": "string — product name and document title in Polish",
+  "productSummary": "string — 2-3 sentences about the product vision and core value, in Polish",
+  "mvpScope": ["string", ...],
+  "userFlow": ["string", ...],
+  "architecture": "string — multiline technical description based on what was discussed",
+  "dbSchema": ["string", ...],
+  "apiEndpoints": ["string", ...],
+  "backlog": ["string", ...],
+  "implementationPlan": ["string", ...],
+  "risks": ["string", ...]
+}
+
+Rules:
+- Write ALL text content in Polish (except code syntax like HTTP methods, field names)
+- Base ALL content strictly on the council discussion and CEO decisions — do not invent features
+- productSummary: synthesize the core product vision from the session
+- mvpScope: 5-8 concrete features that were decided by the council
+- userFlow: 5-7 steps describing the main user journey
+- architecture: reference specific technologies discussed in the session
+- dbSchema: 3-5 main data entities with key fields (format: "entity — field1, field2, field3")
+- apiEndpoints: 6-10 REST endpoints for core features (format: "METHOD /path — short description in Polish")
+- backlog: 8-12 development tasks in priority order, each prefixed with "[ ]"
+- implementationPlan: 3-4 phases (format: "Faza N — opis: co obejmuje")
+- risks: 3-5 specific risks that were flagged during the council session
+- Keep each array item concise (under 15 words)
+`;
+
+const PRD_GENERATION_USER_PROMPT = ({ idea, topicSummaries, decisions }) => {
+  const topicsBlock = topicSummaries
+    .map((s) => {
+      const lines = [
+        `### ${s.topicTitle}`,
+        `Podsumowanie: ${s.summary}`,
+        `Decyzja CEO: ${s.decision}`,
+      ];
+      if (s.conflict) {
+        lines.push(`Konflikt: ${s.conflict.title} → rozwiązanie: ${s.conflict.resolution || "brak"}`);
+      }
+      return lines.join("\n");
+    })
+    .join("\n\n");
+
+  const decisionsBlock =
+    decisions.length > 0
+      ? `\nKluczowe decyzje z głosowań:\n${decisions.map((d) => `- ${d.text}`).join("\n")}`
+      : "";
+
+  return `Pomysł użytkownika:
+${idea}
+
+Wyniki sesji rady produktowej:
+${topicsBlock}
+${decisionsBlock}
+
+Na podstawie powyższej dyskusji i decyzji rady stwórz kompletny PRD dla tego produktu.
+Odpowiedz TYLKO w formacie JSON zgodnym z podanym schematem.`;
+};
+
 module.exports = {
   AGENT_PROMPTS,
   REPLY_USER_PROMPT,
@@ -720,4 +788,6 @@ module.exports = {
   VALIDATE_AGENT_SCOPE_USER_PROMPT,
   TOPIC_SUMMARY_SYSTEM_PROMPT,
   TOPIC_SUMMARY_USER_PROMPT,
+  PRD_GENERATION_SYSTEM_PROMPT,
+  PRD_GENERATION_USER_PROMPT,
 };
