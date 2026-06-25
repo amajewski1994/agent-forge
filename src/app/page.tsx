@@ -4,6 +4,7 @@ import CouncilStatusBar from "@/components/council/CouncilStatusBar";
 import { DecisionPanel } from "@/components/outputs";
 import { WorkflowTimeline } from "@/components/layout";
 import PhaseStatus from "@/components/layout/PhaseStatus";
+import HowItWorks from "@/components/layout/HowItWorks";
 import { CouncilSimProvider } from "@/context/CouncilSimContext";
 
 export default function Home() {
@@ -23,6 +24,7 @@ export default function Home() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
+          <HowItWorks />
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-emerald-400 font-medium">Session Active</span>
