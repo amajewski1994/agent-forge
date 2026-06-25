@@ -6,7 +6,6 @@ const {
   DETERMINE_AGENT_STANCE_SYSTEM_PROMPT,
   DETERMINE_AGENT_STANCE_USER_PROMPT,
   FORCED_VOTE_REASON_USER_PROMPT,
-  PM_VOTE_ANNOUNCEMENT_USER_PROMPT,
 } = require("./prompts");
 const { formatConversationHistory, extractJson } = require("../utils/councilUtils");
 
@@ -59,13 +58,6 @@ async function generateForcedVoteReason({ agentKey, conflict, optionLabel, ownSt
   return result?.trim() || "Zgodnie z tym, co już powiedziałem.";
 }
 
-async function generatePMVoteAnnouncement({ conflict, sideA, sideB }) {
-  const result = await callQwen({
-    systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
-    userPrompt: PM_VOTE_ANNOUNCEMENT_USER_PROMPT({ conflict, sideA, sideB }),
-  });
-  return result?.trim() || `Przechodzimy do głosowania w temacie "${conflict.topic}".`;
-}
 
 async function runConflictVote({ conflict, messages, send }) {
   const conflictId = Date.now();
@@ -75,8 +67,6 @@ async function runConflictVote({ conflict, messages, send }) {
   const sideB = conflict.sideB || "Oppose";
   const voteOptions = [{ id: "A", label: sideA }, { id: "B", label: sideB }];
 
-  const pmAnnouncement = await generatePMVoteAnnouncement({ conflict, sideA, sideB });
-  send("agent_message", { id: Date.now(), agentAbbr: "PM", role: "Product Manager", content: pmAnnouncement, type: "message" });
   send("vote_options", voteOptions);
 
   const conversationHistory = formatConversationHistory(messages);

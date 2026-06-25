@@ -141,6 +141,12 @@ export function useCouncilSimulation(): CouncilSimState {
     topicSummaries: TopicSummary[];
     decisions: Decision[];
   }>({ idea: "", topicSummaries: [], decisions: [] });
+  // Buffer for conflict vote events — replayed with choreographed timing
+  const conflictVoteBufferRef = useRef<{
+    voteOptions: VoteOption[];
+    votes: Vote[];
+    complete: { winner: VoteOption; tally: Record<string, number>; votes: Vote[]; options: VoteOption[]; conflictTopic?: string } | null;
+  }>({ voteOptions: [], votes: [], complete: null });
 
   useEffect(() => {
     return () => {
@@ -233,7 +239,8 @@ export function useCouncilSimulation(): CouncilSimState {
     // ── Chat messages — queue held until after activation ─────────────────
     type QueueItem =
       | { kind: "message"; msg: CouncilMessage }
-      | { kind: "phase"; value: CouncilPhase };
+      | { kind: "phase"; value: CouncilPhase }
+      | { kind: "conflict"; data: Conflict };
 
     const msgQueue: QueueItem[] = [];
     let queueBusy = true; // held until activation completes
@@ -251,6 +258,77 @@ export function useCouncilSimulation(): CouncilSimState {
         setTypingAgent(null);
         setPhase(item.value);
         timers.current.push(setTimeout(processNext, 50));
+        return;
+      }
+
+      if (item.kind === "conflict") {
+        const conflictData = item.data;
+        // 2 seconds after PM message → show voting sidebar
+        timers.current.push(setTimeout(() => {
+          const buf = conflictVoteBufferRef.current;
+          setActiveConflict(conflictData);
+          setVotes([]);
+          setVoteOptions(buf.voteOptions);
+          setPhase("voting");
+
+          // Replay each vote with 700ms intervals
+          buf.votes.forEach((vote, idx) => {
+            timers.current.push(setTimeout(() => {
+              setVotes((prev) => [...prev, vote]);
+            }, (idx + 1) * 700));
+          });
+
+          const totalVoteMs = buf.votes.length * 700;
+
+          // 1 second after last vote → show result message, close conflict
+          timers.current.push(setTimeout(() => {
+            const complete = buf.complete;
+            if (complete) {
+              const { winner, tally, votes: finalVotes, options: finalOptions, conflictTopic } = complete;
+              if (conflictTopic) {
+                const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
+                setDecisions((prev) => {
+                  const next = [...prev, newDecision];
+                  prdDataRef.current.decisions = next;
+                  return next;
+                });
+              }
+              setActiveConflict((prev) => {
+                if (!prev) return null;
+                const resolved: Conflict = {
+                  ...prev,
+                  resolution: `${winner.label} (${tally.A ?? 0}-${tally.B ?? 0})`,
+                  votes: finalVotes,
+                  options: finalOptions,
+                };
+                setConflicts((c) => c.some((x) => x.id === resolved.id) ? c : [...c, resolved]);
+                const resultMsgId = -(prev.id + 1);
+                setMessages((msgs) =>
+                  msgs.some((m) => m.id === resultMsgId)
+                    ? msgs
+                    : [
+                        ...msgs,
+                        {
+                          id: resultMsgId,
+                          agentAbbr: "RESULT",
+                          role: "Vote Result",
+                          content: `${winner.label} wins ${tally.A ?? 0}-${tally.B ?? 0}`,
+                          timestamp: nowTime(),
+                          type: "conflict_result" as const,
+                          conflictTitle: prev.title,
+                          votes: finalVotes,
+                          options: finalOptions,
+                        },
+                      ],
+                );
+                return null;
+              });
+              setPhase("council");
+            }
+            conflictVoteBufferRef.current = { voteOptions: [], votes: [], complete: null };
+            timers.current.push(setTimeout(processNext, 50));
+          }, totalVoteMs + 1000));
+        }, 2000));
         return;
       }
 
@@ -295,96 +373,22 @@ export function useCouncilSimulation(): CouncilSimState {
     // ── Conflict ───────────────────────────────────────────────────────────
     es.addEventListener("conflict_detected", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as Conflict;
-      setActiveConflict(data);
-      setVotes([]);
-      setVoteOptions([]);
-      setPhase("conflict");
-      setMessages((prev) =>
-        prev.some((m) => m.id === -data.id)
-          ? prev
-          : [
-              ...prev,
-              {
-                id: -data.id,
-                agentAbbr: "CONFLICT",
-                role: "Conflict Detected",
-                content: data.description,
-                timestamp: nowTime(),
-                type: "conflict" as const,
-                conflictTitle: data.title,
-              },
-            ],
-      );
+      conflictVoteBufferRef.current = { voteOptions: [], votes: [], complete: null };
+      msgQueue.push({ kind: "conflict", data });
+      if (!queueBusy) processNext();
     });
 
-    // ── Voting ─────────────────────────────────────────────────────────────
+    // ── Voting — buffered, replayed by conflict queue handler ──────────────
     es.addEventListener("vote_options", (e: MessageEvent) => {
-      const data = JSON.parse(e.data) as VoteOption[];
-      setVoteOptions(data);
-      setPhase("voting");
+      conflictVoteBufferRef.current.voteOptions = JSON.parse(e.data) as VoteOption[];
     });
 
     es.addEventListener("vote", (e: MessageEvent) => {
-      const data = JSON.parse(e.data) as Vote;
-      setVotes((prev) => [...prev, data]);
+      conflictVoteBufferRef.current.votes.push(JSON.parse(e.data) as Vote);
     });
 
     es.addEventListener("votes_complete", (e: MessageEvent) => {
-      const {
-        conflictTopic,
-        winner,
-        tally,
-        votes: finalVotes,
-        options: finalOptions,
-      } = JSON.parse(e.data) as {
-        conflictTopic?: string;
-        winner: VoteOption;
-        tally: Record<string, number>;
-        votes: Vote[];
-        options: VoteOption[];
-      };
-      if (conflictTopic) {
-        const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
-        setDecisions((prev) => {
-          const next = [...prev, newDecision];
-          prdDataRef.current.decisions = next;
-          return next;
-        });
-      }
-      setActiveConflict((prev) => {
-        if (prev) {
-          const resolved: Conflict = {
-            ...prev,
-            resolution: `${winner.label} (${tally.A ?? 0}-${tally.B ?? 0})`,
-            votes: finalVotes,
-            options: finalOptions,
-          };
-          setConflicts((c) =>
-            c.some((x) => x.id === resolved.id) ? c : [...c, resolved],
-          );
-          const resultMsgId = -(prev.id + 1);
-          setMessages((msgs) =>
-            msgs.some((m) => m.id === resultMsgId)
-              ? msgs
-              : [
-                  ...msgs,
-                  {
-                    id: resultMsgId,
-                    agentAbbr: "RESULT",
-                    role: "Vote Result",
-                    content: `${winner.label} wins ${tally.A ?? 0}-${tally.B ?? 0}`,
-                    timestamp: nowTime(),
-                    type: "conflict_result" as const,
-                    conflictTitle: prev.title,
-                    votes: finalVotes,
-                    options: finalOptions,
-                  },
-                ],
-          );
-        }
-        return null;
-      });
-      setPhase("council");
+      conflictVoteBufferRef.current.complete = JSON.parse(e.data);
     });
 
     // ── Proceed gate — activate agents, then show "Generating agenda…", then drain PM messages ─

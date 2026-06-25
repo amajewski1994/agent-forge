@@ -213,6 +213,10 @@ Do not reopen or question any final decision listed above.
 
 Speak naturally, as if you were in a live meeting.
 
+Check the conversation history above — if agreement openers like "Zgadzam się", "Dokładnie", "Racja", "Masz rację" or similar have appeared recently, do not repeat them. Use them sparingly and only when genuinely warranted.
+
+Vary your sentence openings to keep the discussion dynamic.
+
 Write exactly ${sentenceCount} sentence${sentenceCount === 1 ? "" : "s"}. No more, no less.
 `;
 };

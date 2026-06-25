@@ -299,7 +299,8 @@ async function buildCouncilWorkflow(idea, options = {}) {
     type: "message",
   });
 
-  const topicsToRun = agenda.slice(0, 1);
+  const topicsToRun = agenda.slice(0, 2);
+  // const topicsToRun = agenda;
 
   if (waitForProceed) {
     sendMessage({
@@ -314,7 +315,8 @@ async function buildCouncilWorkflow(idea, options = {}) {
   }
   const minRelevance = 5;
   const maxResponsesPerAgentPerTopic = 4;
-  const maxRepliesPerTopic = 6;
+  const minRepliesPerTopic = 3;
+  const maxRepliesPerTopic = 8;
   let stageNumber = 0;
 
   for (let topicIndex = 0; topicIndex < topicsToRun.length; topicIndex++) {
@@ -338,7 +340,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
     const pmOpening = await generateTopicOpening({
       idea,
       topic,
-      conversationHistory: formatConversationHistory(messages),
+      conversationHistory: formatConversationHistory(messages.slice(topicStartIndex)),
     });
     sendMessage({
       id: nextMessageId++,
@@ -354,7 +356,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
     const firstResponse = await generateCheckedAgentReply({
       agentKey: firstResponderKey,
       idea,
-      conversationHistory: formatConversationHistory(messages),
+      conversationHistory: formatConversationHistory(messages.slice(topicStartIndex)),
       lastMessage: messages[messages.length - 1],
       resolvedDecisions,
       topic,
@@ -372,7 +374,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
 
     for (let i = 0; i < maxRepliesPerTopic; i++) {
       const lastMessage = messages[messages.length - 1];
-      const conversationHistory = formatConversationHistory(messages);
+      const conversationHistory = formatConversationHistory(messages.slice(topicStartIndex));
 
       const candidateAgents = Object.keys(AGENT_META).filter(
         (key) =>
@@ -395,7 +397,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
 
       evaluations.sort((a, b) => b.relevance - a.relevance);
       const winner = evaluations[0];
-      if (!winner || winner.relevance < minRelevance) break;
+      if (!winner || (i >= minRepliesPerTopic && winner.relevance < minRelevance)) break;
 
       const response = await generateCheckedAgentReply({
         agentKey: winner.agentKey,
@@ -418,10 +420,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
         (responseCountForTopic[winner.agentKey] || 0) + 1;
     }
 
-    const conflict = await detectConflicts(
-      messages.slice(topicStartIndex),
-      resolvedTopics,
-    );
+    const conflict = await detectConflicts(messages.slice(topicStartIndex), resolvedTopics);
     console.log("[Conflict Detection]", JSON.stringify(conflict, null, 2));
 
     let conflictData = null;
