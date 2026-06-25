@@ -13,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const pendingSessions = new Map();
+const pendingGenerateSessions = new Map();
 
 app.get("/", (req, res) => {
   res.json({ message: "Agent Forge backend is running" });
@@ -23,6 +24,18 @@ app.post("/api/council/proceed", (req, res) => {
   const resolve = pendingSessions.get(sessionId);
   if (resolve) {
     pendingSessions.delete(sessionId);
+    resolve();
+    res.json({ ok: true });
+  } else {
+    res.status(404).json({ error: "Session not found" });
+  }
+});
+
+app.post("/api/council/generate-start", (req, res) => {
+  const { sessionId } = req.body;
+  const resolve = pendingGenerateSessions.get(sessionId);
+  if (resolve) {
+    pendingGenerateSessions.delete(sessionId);
     resolve();
     res.json({ ok: true });
   } else {
@@ -69,12 +82,19 @@ app.get("/api/council/start", async (req, res) => {
     ? () => new Promise((resolve) => { pendingSessions.set(sessionId, resolve); })
     : null;
 
+  const waitForGenerate = sessionId
+    ? () => new Promise((resolve) => { pendingGenerateSessions.set(sessionId, resolve); })
+    : null;
+
   req.on("close", () => {
-    if (sessionId) pendingSessions.delete(sessionId);
+    if (sessionId) {
+      pendingSessions.delete(sessionId);
+      pendingGenerateSessions.delete(sessionId);
+    }
   });
 
   try {
-    await buildCouncilWorkflow(idea, { send, waitForProceed });
+    await buildCouncilWorkflow(idea, { send, waitForProceed, waitForGenerate });
 
     send("done", { message: "Council finished" });
     res.end();

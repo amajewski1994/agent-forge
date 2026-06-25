@@ -13,8 +13,9 @@ const PHASE_LABEL: Record<CouncilPhase, string> = {
   conflict:         "Phase: Resolution",
   voting:           "Phase: Voting",
   decision:         "Phase: Decision",
-  awaiting_proceed: "Phase: Decision",
-  output:           "Phase: Output",
+  awaiting_proceed:  "Phase: Decision",
+  awaiting_generate: "Phase: Output",
+  output:            "Phase: Output",
   complete:         "Complete",
 };
 
@@ -26,8 +27,9 @@ const PHASE_STEPS: Record<CouncilPhase, WorkflowStepStatus[]> = {
   conflict:         ["done",    "done",    "active",  "pending", "pending"],
   voting:           ["done",    "done",    "active",  "pending", "pending"],
   decision:         ["done",    "done",    "active",  "pending", "pending"],
-  awaiting_proceed: ["done",    "done",    "done",    "active",  "pending"],
-  output:           ["done",    "done",    "done",    "active",  "pending"],
+  awaiting_proceed:  ["done",    "done",    "done",    "active",  "pending"],
+  awaiting_generate: ["done",    "done",    "done",    "active",  "pending"],
+  output:            ["done",    "done",    "done",    "active",  "pending"],
   complete:         ["done",    "done",    "done",    "done",    "done"],
 };
 

@@ -24,6 +24,7 @@ export type CouncilPhase =
   | "voting"
   | "decision"
   | "awaiting_proceed"
+  | "awaiting_generate"
   | "output"
   | "complete";
 
@@ -50,6 +51,7 @@ export interface CouncilSimState {
   prd: MvpReport | null;
   isPrdGenerating: boolean;
   generatePrd: () => void;
+  generateMvpPackage: () => void;
   start: (idea: string) => void;
   proceed: () => void;
 }
@@ -83,62 +85,14 @@ function computeAgentStatuses(
 }
 
 const OUTPUT_ITEMS_BASE: OutputItem[] = [
-  {
-    id: 1,
-    title: "PRD",
-    subtitle: "Product Requirements",
-    icon: "📄",
-    ready: false,
-  },
-  {
-    id: 2,
-    title: "MVP Scope",
-    subtitle: "Core features",
-    icon: "🎯",
-    ready: false,
-  },
-  {
-    id: 3,
-    title: "User Flow",
-    subtitle: "User journey",
-    icon: "🔀",
-    ready: false,
-  },
-  {
-    id: 4,
-    title: "Architecture",
-    subtitle: "System design",
-    icon: "🏗️",
-    ready: false,
-  },
-  {
-    id: 5,
-    title: "DB Schema",
-    subtitle: "Database structure",
-    icon: "🗄️",
-    ready: false,
-  },
-  {
-    id: 6,
-    title: "API Endpoints",
-    subtitle: "REST API specs",
-    icon: "🔌",
-    ready: false,
-  },
-  {
-    id: 7,
-    title: "Backlog",
-    subtitle: "Development tasks",
-    icon: "📋",
-    ready: false,
-  },
-  {
-    id: 8,
-    title: "Impl. Plan",
-    subtitle: "Step-by-step plan",
-    icon: "🗺️",
-    ready: false,
-  },
+  { id: 1, title: "Product Summary",        subtitle: "", icon: "", ready: false },
+  { id: 2, title: "MVP Scope",              subtitle: "", icon: "", ready: false },
+  { id: 3, title: "User Flow",              subtitle: "", icon: "", ready: false },
+  { id: 4, title: "Architecture",           subtitle: "", icon: "", ready: false },
+  { id: 5, title: "Data & Integrations",    subtitle: "", icon: "", ready: false },
+  { id: 6, title: "Implementation Roadmap", subtitle: "", icon: "", ready: false },
+  { id: 7, title: "Risks & Open Questions", subtitle: "", icon: "", ready: false },
+  { id: 8, title: "Decision Log",           subtitle: "", icon: "", ready: false },
 ];
 
 function nowTime(): string {
@@ -201,6 +155,16 @@ export function useCouncilSimulation(): CouncilSimState {
     preCouncilRef.current = false;
     setPhase("council");
     fetch(`${BACKEND_URL}/api/council/proceed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    }).catch(console.error);
+  }, []);
+
+  const generateMvpPackage = useCallback(() => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+    fetch(`${BACKEND_URL}/api/council/generate-start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId }),
@@ -468,6 +432,12 @@ export function useCouncilSimulation(): CouncilSimState {
       });
     });
 
+    // ── Awaiting generate ──────────────────────────────────────────────────
+    es.addEventListener("awaiting_generate", () => {
+      msgQueue.push({ kind: "phase", value: "awaiting_generate" });
+      if (!queueBusy) processNext();
+    });
+
     // ── Output ─────────────────────────────────────────────────────────────
     es.addEventListener("final_output", () => {
       generatePrd();
@@ -531,6 +501,7 @@ export function useCouncilSimulation(): CouncilSimState {
     prd,
     isPrdGenerating,
     generatePrd,
+    generateMvpPackage,
     start,
     proceed,
   };

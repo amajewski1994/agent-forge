@@ -8,6 +8,7 @@ const {
   BUILD_AGENDA_SYSTEM_PROMPT,
   BUILD_AGENDA_USER_PROMPT,
   PM_IDEA_INTRO_USER_PROMPT,
+  PM_CLOSING_USER_PROMPT,
   TOPIC_OPENING_USER_PROMPT,
   CEO_TOPIC_DECISION_SYSTEM_PROMPT,
   CEO_TOPIC_DECISION_USER_PROMPT,
@@ -253,8 +254,15 @@ async function detectConflicts(messages, resolvedTopics = []) {
   }
 }
 
+async function generatePMClosingMessage({ idea, agenda }) {
+  return callQwen({
+    systemPrompt: AGENT_PROMPTS.PM.systemPrompt,
+    userPrompt: PM_CLOSING_USER_PROMPT({ agenda }),
+  });
+}
+
 async function buildCouncilWorkflow(idea, options = {}) {
-  const { send, waitForProceed } = options;
+  const { send, waitForProceed, waitForGenerate } = options;
   const messages = [];
   const resolvedTopics = [];
   const resolvedDecisions = [];
@@ -491,6 +499,20 @@ async function buildCouncilWorkflow(idea, options = {}) {
       send("awaiting_proceed", {});
       await waitForProceed();
     }
+  }
+
+  const pmClosing = await generatePMClosingMessage({ idea, agenda: topicsToRun });
+  sendMessage({
+    id: nextMessageId++,
+    agentAbbr: "PM",
+    role: "Product Manager",
+    content: pmClosing,
+    type: "message",
+  });
+
+  if (waitForGenerate) {
+    send("awaiting_generate", {});
+    await waitForGenerate();
   }
 
   send("final_output", {});

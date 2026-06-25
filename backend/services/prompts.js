@@ -691,49 +691,65 @@ Agent's message:
 Does this message stay within the agent's assigned area? Return JSON only.
 `;
 
+// ─── PM closing message ───────────────────────────────────────────────────────
+
+const PM_CLOSING_USER_PROMPT = ({ agenda }) => `
+The council has just finished discussing all agenda topics:
+${agenda.map((t, i) => `${i + 1}. ${t.title}`).join("\n")}
+
+As the Product Manager, close the council session.
+Tell the team we've covered all the topics and the next step is generating the MVP Package document.
+Write exactly 2 sentences. Be natural and direct, like wrapping up a real meeting.
+`;
+
 // ─── PRD generation ───────────────────────────────────────────────────────────
 
 const PRD_GENERATION_SYSTEM_PROMPT = `
-You are a Senior Product Manager writing a Product Requirements Document (PRD).
-You are synthesizing the decisions and discussion from a product council session into a structured document.
+You are a Senior Product Manager writing an MVP Package document.
+You are synthesizing the CEO decisions and council discussion from a product session into a structured document.
 
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 
 Response shape:
 {
-  "title": "string — product name and document title in Polish",
-  "productSummary": "string — 2-3 sentences about the product vision and core value, in Polish",
-  "mvpScope": ["string", ...],
+  "projectName": "string — product name in Polish (2-5 words)",
+  "productSummary": "string — 2-3 sentences: what we are building, for whom, and what is the core value. In Polish.",
+  "mvpScope": {
+    "inMvp": ["string", ...],
+    "postMvp": ["string", ...]
+  },
   "userFlow": ["string", ...],
-  "architecture": "string — multiline technical description based on what was discussed",
-  "dbSchema": ["string", ...],
-  "apiEndpoints": ["string", ...],
-  "backlog": ["string", ...],
-  "implementationPlan": ["string", ...],
-  "risks": ["string", ...]
+  "architecture": "string — multiline technical description of the approved stack and system boundaries",
+  "dataAndIntegrations": ["string", ...],
+  "implementationRoadmap": ["string", ...],
+  "risksAndOpenQuestions": ["string", ...],
+  "decisionLog": [
+    { "stage": "agenda stage title (e.g. Product Vision)", "decision": "CEO decision text" }
+  ]
 }
 
 Rules:
-- Write ALL text content in Polish (except code syntax like HTTP methods, field names)
-- Base ALL content strictly on the council discussion and CEO decisions — do not invent features
-- productSummary: synthesize the core product vision from the session
-- mvpScope: 5-8 concrete features that were decided by the council
-- userFlow: 5-7 steps describing the main user journey
-- architecture: reference specific technologies discussed in the session
-- dbSchema: 3-5 main data entities with key fields (format: "entity — field1, field2, field3")
-- apiEndpoints: 6-10 REST endpoints for core features (format: "METHOD /path — short description in Polish")
-- backlog: 8-12 development tasks in priority order, each prefixed with "[ ]"
-- implementationPlan: 3-4 phases (format: "Faza N — opis: co obejmuje")
-- risks: 3-5 specific risks that were flagged during the council session
-- Keep each array item concise (under 15 words)
+- Write ALL text content in Polish (except code syntax, HTTP methods, field names, tech names)
+- Base ALL content strictly on the CEO decisions and council discussion — do not invent features
+- projectName: the product name agreed upon or derived from the idea
+- productSummary: synthesize the core vision — what, for whom, why, in 2-3 Polish sentences
+- mvpScope.inMvp: 4-7 concrete features confirmed for the MVP by the CEO decisions
+- mvpScope.postMvp: 3-5 features explicitly deferred or excluded from MVP scope
+- userFlow: 5-7 steps of the main user journey from entry to success state
+- architecture: the approved stack and system boundaries (frontend, backend, AI, deployment, auth)
+- dataAndIntegrations: 4-6 key data entities and/or external integrations (format: "Encja/Integracja — krótki opis po polsku")
+- implementationRoadmap: 3-5 build phases in order (format: "Faza N — co obejmuje, w polskim")
+- risksAndOpenQuestions: 3-5 specific risks flagged during the session OR open questions left to resolve
+- decisionLog: copy EXACTLY from the DECISION LOG provided in the user prompt — do not rephrase, reorder, or omit any entry
+- Keep each array item concise (under 20 words)
 `;
 
 const PRD_GENERATION_USER_PROMPT = ({ idea, topicSummaries, decisions }) => {
   const topicsBlock = topicSummaries
-    .map((s) => {
+    .map((s, idx) => {
       const lines = [
-        `### ${s.topicTitle}`,
-        `Podsumowanie: ${s.summary}`,
+        `### Etap ${idx + 1}: ${s.topicTitle}`,
+        `Dyskusja: ${s.summary}`,
         `Decyzja CEO: ${s.decision}`,
       ];
       if (s.conflict) {
@@ -745,23 +761,32 @@ const PRD_GENERATION_USER_PROMPT = ({ idea, topicSummaries, decisions }) => {
 
   const decisionsBlock =
     decisions.length > 0
-      ? `\nKluczowe decyzje z głosowań:\n${decisions.map((d) => `- ${d.text}`).join("\n")}`
+      ? `\nDecyzje z głosowań rady:\n${decisions.map((d) => `- ${d.text}`).join("\n")}`
       : "";
+
+  const decisionLogBlock = topicSummaries
+    .map((s, idx) => `${idx + 1}. ${s.topicTitle} → ${s.decision}`)
+    .join("\n");
 
   return `Pomysł użytkownika:
 ${idea}
 
-Wyniki sesji rady produktowej:
+Etapy sesji rady produktowej z decyzjami CEO:
 ${topicsBlock}
 ${decisionsBlock}
 
-Na podstawie powyższej dyskusji i decyzji rady stwórz kompletny PRD dla tego produktu.
+DECISION LOG — skopiuj te wpisy DOSŁOWNIE do pola decisionLog w odpowiedzi JSON.
+Nie zmieniaj kolejności, nie parafrazuj, nie pomijaj żadnego wpisu.
+${decisionLogBlock}
+
+Na podstawie powyższych decyzji CEO stwórz MVP Package dla tego produktu.
 Odpowiedz TYLKO w formacie JSON zgodnym z podanym schematem.`;
 };
 
 module.exports = {
   AGENT_PROMPTS,
   REPLY_USER_PROMPT,
+  PM_CLOSING_USER_PROMPT,
   CLASSIFY_PROJECT_SYSTEM_PROMPT,
   CLASSIFY_PROJECT_USER_PROMPT,
   FIXED_AGENDA_STAGES,

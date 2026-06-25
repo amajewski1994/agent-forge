@@ -14,15 +14,16 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
   conflict:         "Resolving conflict",
   voting:           "Agents voting",
   decision:         "CEO is deciding",
-  awaiting_proceed: "Awaiting your decision",
-  output:           "Generating deliverables",
+  awaiting_proceed:  "Awaiting your decision",
+  awaiting_generate: "Ready to generate",
+  output:            "Generating deliverables",
   complete:         "Session complete",
 };
 
 const COUNCIL_THINKING_PHASES: CouncilPhase[] = ["council", "conflict", "voting"];
 
 export default function CouncilChat() {
-  const { messages, phase, submittedIdea, proceed, typingAgent, isRunning, spinnerPhase } = useCouncilSim();
+  const { messages, phase, submittedIdea, proceed, generateMvpPackage, typingAgent, isRunning, spinnerPhase } = useCouncilSim();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const showCouncilThinking =
@@ -120,7 +121,7 @@ export default function CouncilChat() {
       )}
 
       {phase === "awaiting_proceed" && (
-        <div className="flex justify-center py-2">
+        <div className="flex justify-center py-2 animate-fade-in">
           <button
             onClick={proceed}
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all cursor-pointer"
@@ -129,6 +130,20 @@ export default function CouncilChat() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
+          </button>
+        </div>
+      )}
+
+      {phase === "awaiting_generate" && (
+        <div className="flex justify-center py-2 animate-fade-in">
+          <button
+            onClick={generateMvpPackage}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Generate MVP Package
           </button>
         </div>
       )}

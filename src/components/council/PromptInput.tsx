@@ -12,8 +12,9 @@ const PHASE_LABEL: Record<CouncilPhase, string> = {
   conflict:         "Resolving conflict...",
   voting:           "Agents voting...",
   decision:         "Deciding...",
-  awaiting_proceed: "Waiting for you...",
-  output:           "Generating output...",
+  awaiting_proceed:  "Waiting for you...",
+  awaiting_generate: "Waiting for you...",
+  output:            "Generating output...",
   complete:         "Start Council",
 };
 
