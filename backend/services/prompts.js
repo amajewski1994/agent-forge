@@ -5,6 +5,7 @@ const vote = require("./prompts/vote");
 const productVision = require("./prompts/productVision");
 const mvpScope = require("./prompts/mvpScope");
 const prd = require("./prompts/prd");
+const userExperience = require("./prompts/userExperience");
 
 module.exports = {
   ...agentPrompts,
@@ -14,4 +15,5 @@ module.exports = {
   ...productVision,
   ...mvpScope,
   ...prd,
+  ...userExperience,
 };
