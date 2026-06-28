@@ -35,7 +35,8 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
   const allRegularVoted = regularVotes.length === 4;
   const isTied = allRegularVoted && !ceoTiebreaker && (() => {
     const counts = options.map((o) => regularVotes.filter((v) => v.optionId === o.id).length);
-    return counts.length >= 2 && counts[0] === counts[1];
+    const max = Math.max(...counts);
+    return counts.filter((c) => c === max).length >= 2;
   })();
   const allVoted        = (allRegularVoted && !isTied) || !!ceoTiebreaker;
   const isCeoReviewing  = isTied && phase === "voting";

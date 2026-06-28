@@ -295,9 +295,11 @@ export function useCouncilSimulation(): CouncilSimState {
               }
               setActiveConflict((prev) => {
                 if (!prev) return null;
+                const isBinaryVote = (finalOptions?.length ?? 2) === 2;
+                const scoreStr = isBinaryVote ? ` (${tally.A ?? 0}-${tally.B ?? 0})` : "";
                 const resolved: Conflict = {
                   ...prev,
-                  resolution: `${winner.label} (${tally.A ?? 0}-${tally.B ?? 0})`,
+                  resolution: `${winner.label}${scoreStr}`,
                   votes: finalVotes,
                   options: finalOptions,
                 };
@@ -312,7 +314,7 @@ export function useCouncilSimulation(): CouncilSimState {
                           id: resultMsgId,
                           agentAbbr: "RESULT",
                           role: "Vote Result",
-                          content: `${winner.label} wins ${tally.A ?? 0}-${tally.B ?? 0}`,
+                          content: `${winner.label} wins${scoreStr}`,
                           timestamp: nowTime(),
                           type: "conflict_result" as const,
                           conflictTitle: prev.title,
@@ -366,7 +368,7 @@ export function useCouncilSimulation(): CouncilSimState {
         councilStartedRef.current = true;
         setCouncilStarted(true);
       }
-      msgQueue.push({ kind: "message", msg: { ...data, timestamp: nowTime(), preCouncil: preCouncilRef.current } });
+      msgQueue.push({ kind: "message", msg: { ...data, timestamp: nowTime(), preCouncil: data.preCouncil ?? preCouncilRef.current } });
       if (!queueBusy) processNext();
     });
 
@@ -415,6 +417,12 @@ export function useCouncilSimulation(): CouncilSimState {
         queueBusy = false;
         processNext();
       }, totalActivationMs + 2500);
+    });
+
+    // ── In-council proceed (feature loop + between topics) ────────────────
+    es.addEventListener("awaiting_feature_proceed", () => {
+      msgQueue.push({ kind: "phase", value: "awaiting_proceed" });
+      if (!queueBusy) processNext();
     });
 
     // ── Stage summaries ────────────────────────────────────────────────────

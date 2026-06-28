@@ -6,6 +6,8 @@ const {
   DETERMINE_AGENT_STANCE_SYSTEM_PROMPT,
   DETERMINE_AGENT_STANCE_USER_PROMPT,
   FORCED_VOTE_REASON_USER_PROMPT,
+  MVP_SCOPE_FEATURE_VOTE_SYSTEM_PROMPTS,
+  MVP_SCOPE_FEATURE_VOTE_USER_PROMPT,
 } = require("./prompts");
 const { formatConversationHistory, extractJson } = require("../utils/councilUtils");
 
@@ -133,4 +135,105 @@ async function runConflictVote({ conflict, messages, send }) {
   };
 }
 
-module.exports = { runConflictVote };
+const FEATURE_VOTE_OPTIONS = [
+  { id: "A", label: "Post MVP" },
+  { id: "B", label: "Approved MVP" },
+  { id: "C", label: "Rejected" },
+];
+
+async function generateFeatureVote({ agentKey, feature, conversationHistory, ownStatements }) {
+  const systemPrompt = MVP_SCOPE_FEATURE_VOTE_SYSTEM_PROMPTS[agentKey] || AGENT_PROMPTS[agentKey].systemPrompt;
+  const result = await callQwen({
+    systemPrompt,
+    userPrompt: MVP_SCOPE_FEATURE_VOTE_USER_PROMPT({ feature, conversationHistory, ownStatements }),
+  });
+  try {
+    const parsed = JSON.parse(extractJson(result));
+    if (!["A", "B", "C"].includes(parsed.optionId)) parsed.optionId = "A";
+    if (!parsed.reason?.trim()) parsed.reason = "Zgodnie z priorytetami mojej roli.";
+    return parsed;
+  } catch {
+    return { optionId: "A", reason: "Zgodnie z priorytetami mojej roli." };
+  }
+}
+
+const STANCE_TO_OPTION = { approved: "B", postMvp: "A", rejected: "C" };
+
+async function generateForcedFeatureVoteReason({ agentKey, feature, forcedOptionId, conversationHistory }) {
+  const systemPrompt = MVP_SCOPE_FEATURE_VOTE_SYSTEM_PROMPTS[agentKey] || AGENT_PROMPTS[agentKey].systemPrompt;
+  const optionLabel = FEATURE_VOTE_OPTIONS.find((o) => o.id === forcedOptionId)?.label ?? forcedOptionId;
+  const result = await callQwen({
+    systemPrompt,
+    userPrompt: `The council discussed the feature: "${feature}".
+You have decided to vote for: ${optionLabel}.
+Write a brief reason (max 8 words, in Polish) explaining why.
+Return ONLY valid JSON: {"optionId":"${forcedOptionId}","reason":"your reason here"}`,
+  });
+  try {
+    const parsed = JSON.parse(extractJson(result));
+    return { optionId: forcedOptionId, reason: parsed.reason?.trim() || "Zgodnie z priorytetami mojej roli." };
+  } catch {
+    return { optionId: forcedOptionId, reason: "Zgodnie z priorytetami mojej roli." };
+  }
+}
+
+async function runFeatureVote({ feature, messages, send, agentStances = {} }) {
+  const conflictId = Date.now();
+  send("conflict_detected", {
+    id: conflictId,
+    title: feature,
+    description: `Głosowanie na temat umieszczenia funkcji "${feature}" w zakresie produktu.`,
+  });
+  send("vote_options", FEATURE_VOTE_OPTIONS);
+
+  const conversationHistory = formatConversationHistory(messages);
+  const tally = { A: 0, B: 0, C: 0 };
+  const collectedVotes = [];
+
+  for (const agent of VOTE_AGENTS) {
+    const forcedStance = agentStances[agent.key];
+    let vote;
+    if (forcedStance && STANCE_TO_OPTION[forcedStance]) {
+      const forcedOptionId = STANCE_TO_OPTION[forcedStance];
+      vote = await generateForcedFeatureVoteReason({ agentKey: agent.key, feature, forcedOptionId, conversationHistory });
+    } else {
+      const ownStatements =
+        messages.filter((m) => m.agentAbbr === agent.abbr).map((m) => m.content).join("\n") || null;
+      vote = await generateFeatureVote({ agentKey: agent.key, feature, conversationHistory, ownStatements });
+    }
+    tally[vote.optionId] = (tally[vote.optionId] || 0) + 1;
+    const votePayload = { agentAbbr: agent.abbr, agentName: agent.name, optionId: vote.optionId, reason: vote.reason };
+    collectedVotes.push(votePayload);
+    send("vote", votePayload);
+  }
+
+  const maxCount = Math.max(tally.A, tally.B, tally.C);
+  const topOptions = FEATURE_VOTE_OPTIONS.filter((o) => tally[o.id] === maxCount);
+
+  if (topOptions.length > 1) {
+    const ceoVote = await generateFeatureVote({ agentKey: "CEO", feature, conversationHistory, ownStatements: null });
+    tally[ceoVote.optionId] = (tally[ceoVote.optionId] || 0) + 1;
+    const ceoPayload = {
+      agentAbbr: "CEO", agentName: "Decision Leader",
+      optionId: ceoVote.optionId, reason: ceoVote.reason, isTiebreaker: true,
+    };
+    collectedVotes.push(ceoPayload);
+    send("vote", ceoPayload);
+  }
+
+  const finalMax = Math.max(...FEATURE_VOTE_OPTIONS.map((o) => tally[o.id]));
+  const winnerOption = FEATURE_VOTE_OPTIONS.find((o) => tally[o.id] === finalMax);
+
+  send("votes_complete", {
+    conflictId,
+    conflictTopic: feature,
+    winner: winnerOption,
+    tally,
+    votes: collectedVotes,
+    options: FEATURE_VOTE_OPTIONS,
+  });
+
+  return { winner: winnerOption };
+}
+
+module.exports = { runConflictVote, runFeatureVote };
