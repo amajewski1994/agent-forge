@@ -6,6 +6,7 @@ const productVision = require("./prompts/productVision");
 const mvpScope = require("./prompts/mvpScope");
 const prd = require("./prompts/prd");
 const userExperience = require("./prompts/userExperience");
+const technicalArchitecture = require("./prompts/technicalArchitecture");
 
 module.exports = {
   ...agentPrompts,
@@ -16,4 +17,5 @@ module.exports = {
   ...mvpScope,
   ...prd,
   ...userExperience,
+  ...technicalArchitecture,
 };

@@ -3,6 +3,7 @@ const { runConflictVote } = require("./voteService");
 const { runProductVisionFlow } = require("./flows/productVisionFlow");
 const { runMvpScopeFlow } = require("./flows/mvpScopeFlow");
 const { runUserExperienceFlow } = require("./flows/userExperienceFlow");
+const { runTechnicalArchitectureFlow } = require("./flows/technicalArchitectureFlow");
 const {
   AGENT_META,
   evaluateAgentInterest,
@@ -122,7 +123,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
   sendMessage({ agentAbbr: "PM", role: "Product Manager", content: pmIdeaIntro, type: "message" });
   sendMessage({ agentAbbr: "PM", role: "Product Manager", content: formatAgendaMessage(agenda), type: "message" });
 
-  const topicsToRun = agenda.slice(3, 4);
+  const topicsToRun = agenda.slice(7, 8);
 
   if (waitForProceed) {
     sendMessage({ agentAbbr: "PM", role: "Product Manager", content: `Czy możemy przejść do pierwszego punktu: „${topicsToRun[0]?.title}"?`, type: "message" });
@@ -154,6 +155,8 @@ async function buildCouncilWorkflow(idea, options = {}) {
       ({ ceoDecision, customStageSummary } = await runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIndex, sendMessage, send, waitForProceed }));
     } else if (topic.title === "User Experience") {
       ({ ceoDecision } = await runUserExperienceFlow({ idea, topic, resolvedDecisions, messages, topicStartIndex, sendMessage, send }));
+    } else if (topic.title === "Technical Architecture") {
+      ({ ceoDecision } = await runTechnicalArchitectureFlow({ idea, topic, resolvedDecisions, messages, topicStartIndex, sendMessage, send }));
     } else {
       ({ ceoDecision, conflictData } = await runDynamicDiscussion({ idea, topic, messages, topicStartIndex, resolvedTopics, resolvedDecisions, sendMessage, send }));
     }
