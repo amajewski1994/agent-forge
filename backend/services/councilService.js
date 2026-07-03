@@ -8,6 +8,9 @@ const {
 } = require("./flows/technicalArchitectureFlow");
 const { runDataModelFlow } = require("./flows/dataModelFlow");
 const {
+  runImplementationRoadmapFlow,
+} = require("./flows/implementationRoadmapFlow");
+const {
   AGENT_META,
   evaluateAgentInterest,
   generateCheckedAgentReply,
@@ -205,7 +208,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
     type: "message",
   });
 
-  const topicsToRun = agenda.slice(8, 9);
+  const topicsToRun = agenda.slice(9, 10);
 
   if (waitForProceed) {
     sendMessage({
@@ -289,6 +292,16 @@ async function buildCouncilWorkflow(idea, options = {}) {
         sendMessage,
         send,
       }));
+    } else if (topic.title === "Implementation Roadmap") {
+      ({ ceoDecision } = await runImplementationRoadmapFlow({
+        idea,
+        topic,
+        resolvedDecisions,
+        messages,
+        topicStartIndex,
+        sendMessage,
+        send,
+      }));
     } else {
       ({ ceoDecision, conflictData } = await runDynamicDiscussion({
         idea,
@@ -307,6 +320,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
       role: "Decision Leader",
       content: ceoDecision,
       type: "decision",
+      ...(topic.title === "Implementation Roadmap" ? { preCouncil: true } : {}),
     });
     resolvedDecisions.push({ topic: topic.title, winner: ceoDecision });
 

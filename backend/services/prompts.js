@@ -8,6 +8,7 @@ const prd = require("./prompts/prd");
 const userExperience = require("./prompts/userExperience");
 const technicalArchitecture = require("./prompts/technicalArchitecture");
 const dataModel = require("./prompts/dataModel");
+const implementationRoadmap = require("./prompts/implementationRoadmap");
 
 module.exports = {
   ...agentPrompts,
@@ -20,4 +21,5 @@ module.exports = {
   ...userExperience,
   ...technicalArchitecture,
   ...dataModel,
+  ...implementationRoadmap,
 };
