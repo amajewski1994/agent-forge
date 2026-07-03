@@ -34,7 +34,7 @@ const FIXED_AGENDA_STAGES = [
   { title: "MVP Scope",             description: "Which features belong in the MVP, and which are Post-MVP?",       firstResponder: "CTO" },
   { title: "User Experience",       description: "What does the main user flow look like?",                         firstResponder: "DESIGNER" },
   { title: "Technical Architecture",description: "Frontend, backend, AI, deployment.",                              firstResponder: "CTO" },
-  { title: "Data & Integrations",   description: "Entities, APIs, and integrations.",                               firstResponder: "CTO" },
+  { title: "Data Model",            description: "Entities, APIs, and integrations.",                               firstResponder: "CTO" },
   { title: "Implementation Roadmap",description: "In what order should the MVP be built?",                          firstResponder: "QA" },
 ];
 
@@ -47,7 +47,7 @@ The council always discusses these fixed topics, in this order (already decided,
 3. MVP Scope
 4. User Experience
 5. Technical Architecture
-6. Data & Integrations
+6. Data Model
 7. Implementation Roadmap
 
 Your job is to propose 1 to 3 ADDITIONAL topics specific to this project's category, to be inserted between "User Experience" and "Technical Architecture".

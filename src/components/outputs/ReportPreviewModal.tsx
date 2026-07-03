@@ -124,7 +124,7 @@ export default function ReportPreviewModal({ onClose }: ReportPreviewModalProps)
             <CodeBlock>{prd.architecture}</CodeBlock>
           </Section>
 
-          <Section title="Data & Integrations">
+          <Section title="Data Model">
             <div className="space-y-1.5">
               {prd.dataAndIntegrations.map((item: string, i: number) => (
                 <p key={i} className="font-mono text-[11px] text-slate-400 bg-slate-950/40 rounded-lg px-3 py-1.5">{item}</p>

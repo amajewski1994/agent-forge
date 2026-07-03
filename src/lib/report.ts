@@ -57,7 +57,7 @@ export function reportToMarkdown(report: MvpReport): string {
   lines.push("```");
   lines.push("");
 
-  lines.push("## Data & Integrations", "");
+  lines.push("## Data Model", "");
   report.dataAndIntegrations.forEach((item) => lines.push(`- ${item}`));
   lines.push("");
 

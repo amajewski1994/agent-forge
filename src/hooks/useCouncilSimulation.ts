@@ -89,7 +89,7 @@ const OUTPUT_ITEMS_BASE: OutputItem[] = [
   { id: 2, title: "MVP Scope",              subtitle: "", icon: "", ready: false },
   { id: 3, title: "User Flow",              subtitle: "", icon: "", ready: false },
   { id: 4, title: "Architecture",           subtitle: "", icon: "", ready: false },
-  { id: 5, title: "Data & Integrations",    subtitle: "", icon: "", ready: false },
+  { id: 5, title: "Data Model",             subtitle: "", icon: "", ready: false },
   { id: 6, title: "Implementation Roadmap", subtitle: "", icon: "", ready: false },
   { id: 7, title: "Risks & Open Questions", subtitle: "", icon: "", ready: false },
   { id: 8, title: "Decision Log",           subtitle: "", icon: "", ready: false },
@@ -265,78 +265,93 @@ export function useCouncilSimulation(): CouncilSimState {
         const conflictData = item.data;
         // 2 seconds after PM message → show voting sidebar
         timers.current.push(setTimeout(() => {
-          const buf = conflictVoteBufferRef.current;
           setActiveConflict(conflictData);
           setVotes([]);
-          setVoteOptions(buf.voteOptions);
           setPhase("voting");
 
-          // Replay each vote with 700ms intervals
-          buf.votes.forEach((vote, idx) => {
-            timers.current.push(setTimeout(() => {
-              setVotes((prev) => [...prev, vote]);
-            }, (idx + 1) * 700));
-          });
-
-          const totalVoteMs = buf.votes.length * 700;
-
-          // 1 second after last vote → show result message, close conflict
-          timers.current.push(setTimeout(() => {
-            const complete = buf.complete;
-            if (complete) {
-              const { winner, tally, votes: finalVotes, options: finalOptions, conflictTopic } = complete;
-              if (conflictTopic) {
-                const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
-                setDecisions((prev) => {
-                  const next = [...prev, newDecision];
-                  prdDataRef.current.decisions = next;
-                  return next;
-                });
-              }
-              setActiveConflict((prev) => {
-                if (!prev) return null;
-                const isBinaryVote = (finalOptions?.length ?? 2) === 2;
-                const scoreStr = isBinaryVote ? ` (${tally.A ?? 0}-${tally.B ?? 0})` : "";
-                const resolved: Conflict = {
-                  ...prev,
-                  resolution: `${winner.label}${scoreStr}`,
-                  votes: finalVotes,
-                  options: finalOptions,
-                };
-                setConflicts((c) => c.some((x) => x.id === resolved.id) ? c : [...c, resolved]);
-                const resultMsgId = -(prev.id + 1);
-                setMessages((msgs) =>
-                  msgs.some((m) => m.id === resultMsgId)
-                    ? msgs
-                    : [
-                        ...msgs,
-                        {
-                          id: resultMsgId,
-                          agentAbbr: "RESULT",
-                          role: "Vote Result",
-                          content: `${winner.label} wins${scoreStr}`,
-                          timestamp: nowTime(),
-                          type: "conflict_result" as const,
-                          conflictTitle: prev.title,
-                          votes: finalVotes,
-                          options: finalOptions,
-                        },
-                      ],
-                );
-                return null;
-              });
-              setPhase("council");
+          // Votes stream in over multiple sequential LLM calls on the backend and can
+          // still be in flight once we get here — wait for "votes_complete" so we replay
+          // the full, authoritative vote list instead of whatever partial list has
+          // arrived so far (otherwise later voters can silently drop from the reveal).
+          const waitForVotesComplete = () => {
+            const buf = conflictVoteBufferRef.current;
+            if (!buf.complete) {
+              timers.current.push(setTimeout(waitForVotesComplete, 150));
+              return;
             }
-            conflictVoteBufferRef.current = { voteOptions: [], votes: [], complete: null };
-            timers.current.push(setTimeout(processNext, 50));
-          }, totalVoteMs + 1000));
+
+            setVoteOptions(buf.voteOptions);
+            const allVotes = buf.complete.votes;
+
+            // Replay each vote with 700ms intervals
+            allVotes.forEach((vote, idx) => {
+              timers.current.push(setTimeout(() => {
+                setVotes((prev) => [...prev, vote]);
+              }, (idx + 1) * 700));
+            });
+
+            const totalVoteMs = allVotes.length * 700;
+
+            // 1 second after last vote → show result message, close conflict
+            timers.current.push(setTimeout(() => {
+              const complete = buf.complete;
+              if (complete) {
+                const { winner, tally, votes: finalVotes, options: finalOptions, conflictTopic } = complete;
+                if (conflictTopic) {
+                  const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
+                  setDecisions((prev) => {
+                    const next = [...prev, newDecision];
+                    prdDataRef.current.decisions = next;
+                    return next;
+                  });
+                }
+                setActiveConflict((prev) => {
+                  if (!prev) return null;
+                  const isBinaryVote = (finalOptions?.length ?? 2) === 2;
+                  const scoreStr = isBinaryVote ? ` (${tally.A ?? 0}-${tally.B ?? 0})` : "";
+                  const resolved: Conflict = {
+                    ...prev,
+                    resolution: `${winner.label}${scoreStr}`,
+                    votes: finalVotes,
+                    options: finalOptions,
+                  };
+                  setConflicts((c) => c.some((x) => x.id === resolved.id) ? c : [...c, resolved]);
+                  const resultMsgId = -(prev.id + 1);
+                  setMessages((msgs) =>
+                    msgs.some((m) => m.id === resultMsgId)
+                      ? msgs
+                      : [
+                          ...msgs,
+                          {
+                            id: resultMsgId,
+                            agentAbbr: "RESULT",
+                            role: "Vote Result",
+                            content: `${winner.label} wins${scoreStr}`,
+                            timestamp: nowTime(),
+                            type: "conflict_result" as const,
+                            conflictTitle: prev.title,
+                            votes: finalVotes,
+                            options: finalOptions,
+                          },
+                        ],
+                  );
+                  return null;
+                });
+                setPhase("council");
+              }
+              conflictVoteBufferRef.current = { voteOptions: [], votes: [], complete: null };
+              timers.current.push(setTimeout(processNext, 50));
+            }, totalVoteMs + 1000));
+          };
+
+          waitForVotesComplete();
         }, 2000));
         return;
       }
 
       const { msg } = item;
 
-      // CEO decision: set phase first, show typing dots for 3s, then reveal
+      // CEO decision: set phase first, show typing dots for 4s, then reveal
       if (msg.type === "decision") {
         setPhase("decision");
         setTypingAgent(msg.agentAbbr);
@@ -344,17 +359,17 @@ export function useCouncilSimulation(): CouncilSimState {
           setTypingAgent(null);
           setMessages((prev) => [...prev, msg]);
           timers.current.push(setTimeout(processNext, 50));
-        }, 3000));
+        }, 4000));
         return;
       }
 
-      // All other messages: show typing dots for 2s, then reveal message
+      // All other messages: show typing dots for 3s, then reveal message
       setTypingAgent(msg.agentAbbr);
       timers.current.push(setTimeout(() => {
         setTypingAgent(null);
         setMessages((prev) => [...prev, msg]);
         timers.current.push(setTimeout(processNext, 50));
-      }, 2000));
+      }, 3000));
     };
 
     es.addEventListener("agenda_ready", (e: MessageEvent) => {

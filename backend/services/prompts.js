@@ -7,6 +7,7 @@ const mvpScope = require("./prompts/mvpScope");
 const prd = require("./prompts/prd");
 const userExperience = require("./prompts/userExperience");
 const technicalArchitecture = require("./prompts/technicalArchitecture");
+const dataModel = require("./prompts/dataModel");
 
 module.exports = {
   ...agentPrompts,
@@ -18,4 +19,5 @@ module.exports = {
   ...prd,
   ...userExperience,
   ...technicalArchitecture,
+  ...dataModel,
 };
