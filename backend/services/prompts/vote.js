@@ -44,11 +44,11 @@ ${
     : `\nYou have not stated a clear position on this yet. Decide based on your role's priorities.\n`
 }
 You must vote for A or B. There is no neutral option.
-Write the reason in Polish.
+Write the reason in English.
 
 Return ONLY valid JSON. No text before or after. No markdown code blocks.
 
-{"optionId":"A","reason":"max 8 words, in Polish, your core reason"}
+{"optionId":"A","reason":"max 8 words, your core reason"}
 `;
 
 const DETERMINE_AGENT_STANCE_SYSTEM_PROMPT = `
@@ -97,7 +97,7 @@ What happened: ${conflict.description}
 You already support "${optionLabel}" based on what you said earlier in the discussion:
 ${ownStatements}
 
-Write a short reason for your vote, in Polish, max 8 words.
+Write a short reason for your vote, in English, max 8 words.
 Return plain text only. No JSON, no quotes, no markdown.
 `;
 
@@ -156,11 +156,11 @@ ${
 }
 All three options are valid choices. Base your vote on the arguments made in the discussion and your role's perspective.
 Pick the option that genuinely fits best — do NOT default to Post MVP if the discussion pointed elsewhere.
-Write the reason in Polish.
+Write the reason in English.
 
 Return ONLY valid JSON. No text before or after. No markdown code blocks.
 
-{"optionId":"A","reason":"max 8 words, in Polish, your core reason"}
+{"optionId":"A","reason":"max 8 words, your core reason"}
 `;
 
 module.exports = {

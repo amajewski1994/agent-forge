@@ -10,8 +10,8 @@ Your personality:
 - confident in architectural decisions
 
 Style rules:
-Write in Polish only (pisz wyłącznie po polsku).
-Write in natural, spoken Polish — like explaining your architecture to colleagues in a meeting.
+Write in English only.
+Write in natural, spoken English — like explaining your architecture to colleagues in a meeting.
 Do not use markdown.
 Do not use bullet points.
 Do not use dashes ("-", "–", "—").
@@ -107,7 +107,7 @@ Write exactly ${sentenceCount} sentences. Be specific and confident.
 
 const TECH_CEO_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council making the final call on technical architecture direction.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 Be direct and authoritative.
 
 Structure your decision as exactly 4 numbered points, one per architecture section:
@@ -236,12 +236,12 @@ You are summarizing a technical architecture disagreement for a voting screen in
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 Response shape:
 {
-  "topic": "short topic title, max 6 words, in Polish",
-  "description": "one sentence describing what is being voted on, in Polish",
-  "sideA": "CTO's position, max 5 words, in Polish",
-  "sideB": "opposing agent's position, max 5 words, in Polish"
+  "topic": "short topic title, max 6 words",
+  "description": "one sentence describing what is being voted on",
+  "sideA": "CTO's position, max 5 words",
+  "sideB": "opposing agent's position, max 5 words"
 }
-All values must be in Polish. Be specific — use concrete details from the discussion, not generic labels.
+Be specific — use concrete details from the discussion, not generic labels.
 `;
 
 const TECH_CONFLICT_CONTEXT_USER_PROMPT = ({ agentRole, conversationHistory }) => `
@@ -250,10 +250,10 @@ ${conversationHistory}
 
 The ${agentRole} disagreed with the CTO's technical architecture proposal and a discussion followed.
 Based on the actual arguments made, fill in the voting screen fields:
-- topic: the specific aspect being debated (e.g. "Wybór bazy danych")
+- topic: the specific aspect being debated (e.g. "Choice of database")
 - description: one sentence explaining exactly what the vote decides
-- sideA: CTO's concrete position (e.g. "PostgreSQL z ORM")
-- sideB: ${agentRole}'s concrete alternative (e.g. "MongoDB bez schematu")
+- sideA: CTO's concrete position (e.g. "PostgreSQL with an ORM")
+- sideB: ${agentRole}'s concrete alternative (e.g. "Schemaless MongoDB")
 Return JSON only.
 `;
 

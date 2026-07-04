@@ -34,12 +34,12 @@ ${conversationHistory}
 The CTO, Designer, and QA have each shared their vision.
 As the Product Manager, briefly compare these three visions and note whether they are aligned or significantly different.
 Then ask the CEO to make the final decision on which vision the team should commit to.
-Write exactly 3 sentences. Start naturally, for example "Mamy..." or "Widzę że...". Be direct.
+Write exactly 3 sentences. Start naturally, for example "We have..." or "I see that...". Be direct.
 `;
 
 const PRODUCT_VISION_CEO_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council making the final call on product vision.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 2 to 3 sentences. Be direct and authoritative.
 Three team members each proposed a vision. Pick the direction that gives the product the best chance of success and explain briefly why.
 Do not invent details that were not discussed. Do not hedge or use vague language.

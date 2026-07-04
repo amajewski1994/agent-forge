@@ -78,7 +78,7 @@ async function runDataModelFlow({ idea, topic, resolvedDecisions, messages, topi
     const parsed = JSON.parse(extractJson(servicesRaw));
     if (Array.isArray(parsed.services)) services = parsed.services.filter(Boolean);
   } catch {}
-  if (services.length === 0) services = ["Zewnętrzny dostawca płatności", "Usługa wysyłki e maili"];
+  if (services.length === 0) services = ["External payment provider", "Email delivery service"];
 
   // CTO names the services
   const servicesIntroMsg = await callQwen({
@@ -136,7 +136,7 @@ async function runDataModelFlow({ idea, topic, resolvedDecisions, messages, topi
     sendMessage({
       agentAbbr: "PM",
       role: "Product Manager",
-      content: `Mamy różnicę zdań w kwestii integracji. Przechodzimy do głosowania.`,
+      content: `We have a disagreement about the integrations. Let's move to a vote.`,
       type: "message",
     });
 
@@ -147,10 +147,10 @@ async function runDataModelFlow({ idea, topic, resolvedDecisions, messages, topi
     });
 
     let conflictContext = {
-      topic: `Ryzyko integracji`,
-      description: `QA zgłosiła zastrzeżenie do jednej z proponowanych integracji CTO.`,
-      sideA: "Zachować integrację",
-      sideB: "Zastąpić integrację",
+      topic: `Integration risk`,
+      description: `QA raised a concern about one of the CTO's proposed integrations.`,
+      sideA: "Keep the integration",
+      sideB: "Replace the integration",
     };
     try {
       const parsed = JSON.parse(extractJson(conflictContextRaw));

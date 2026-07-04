@@ -150,7 +150,7 @@ async function runTechReviewSection({
     sendMessage({
       agentAbbr: "PM",
       role: "Product Manager",
-      content: `Dobrze, widzę że doszliście do porozumienia. Dziękuję za tę wymianę zdań.`,
+      content: `Good, it looks like you've reached an agreement. Thanks for that exchange.`,
       type: "message",
     });
     return;
@@ -159,7 +159,7 @@ async function runTechReviewSection({
   sendMessage({
     agentAbbr: "PM",
     role: "Product Manager",
-    content: `Mamy różnicę zdań w kwestii architektury. Przechodzimy do głosowania.`,
+    content: `We have a disagreement about the architecture. Let's move to a vote.`,
     type: "message",
   });
 
@@ -172,10 +172,10 @@ async function runTechReviewSection({
   });
 
   let conflictContext = {
-    topic: `Kierunek architektury — ${agentMeta.role}`,
-    description: `${agentMeta.role} zgłosił zastrzeżenie do propozycji architektonicznej CTO.`,
-    sideA: "Kierunek CTO",
-    sideB: `Zmiana wg ${agentMeta.role}`,
+    topic: `Architecture direction — ${agentMeta.role}`,
+    description: `${agentMeta.role} raised a concern about the CTO's architectural proposal.`,
+    sideA: "CTO's direction",
+    sideB: `${agentMeta.role}'s change`,
   };
   try {
     const parsed = JSON.parse(extractJson(conflictContextRaw));
@@ -298,7 +298,7 @@ async function runTechnicalArchitectureFlow({ idea, topic, resolvedDecisions, me
   });
 
   return {
-    ceoDecision: rawCeoDecision?.trim() || `Zatwierdzamy architekturę techniczną zaproponowaną przez CTO.`,
+    ceoDecision: rawCeoDecision?.trim() || `We're approving the technical architecture proposed by the CTO.`,
   };
 }
 

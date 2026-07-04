@@ -22,12 +22,12 @@ const { formatConversationHistory, extractJson } = require("../../utils/councilU
 const { AGENT_META } = require("../agentHelpers");
 
 const FALLBACK_STEPS = [
-  "Konfiguracja projektu i podstawowej infrastruktury",
-  "Budowa rdzenia funkcjonalności produktu",
-  "Integracja z niezbędnymi usługami zewnętrznymi",
-  "Wdrożenie interfejsu użytkownika",
-  "Testy i walidacja kluczowych scenariuszy",
-  "Wdrożenie produkcyjne",
+  "Set up the project and base infrastructure",
+  "Build the core product functionality",
+  "Integrate the required external services",
+  "Implement the user interface",
+  "Test and validate key scenarios",
+  "Deploy to production",
 ];
 
 async function runRoadmapReviewSection({
@@ -80,8 +80,8 @@ async function runImplementationRoadmapFlow({ idea, topic, resolvedDecisions, me
   if (steps.length < 2) steps = FALLBACK_STEPS;
 
   // PM presents the roadmap, one stage per line
-  const roadmapMessage = `Roadmap prezentuje się następująco:\n\n${steps
-    .map((step, i) => `Etap ${i + 1} ${step}`)
+  const roadmapMessage = `Here's how the roadmap looks:\n\n${steps
+    .map((step, i) => `Step ${i + 1} ${step}`)
     .join("\n")}`;
   sendMessage({ agentAbbr: "PM", role: "Product Manager", content: roadmapMessage, type: "message", preCouncil: true });
 

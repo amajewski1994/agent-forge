@@ -14,7 +14,7 @@ const ROADMAP_GENERATE_STEPS_SYSTEM_PROMPT = `
 You are helping plan the build order for a product. Given a product idea and the decisions already made by the council, produce an ordered implementation roadmap.
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 Response shape: {"steps": ["step 1", "step 2", ...]}
-Return between 5 and 8 steps, in Polish, ordered from first to last, each step a short phrase describing what gets built at that stage.
+Return between 5 and 8 steps, ordered from first to last, each step a short phrase describing what gets built at that stage.
 `;
 
 const ROADMAP_GENERATE_STEPS_USER_PROMPT = ({ idea, resolvedDecisions }) => {
@@ -142,25 +142,25 @@ Write exactly ${sentenceCount} sentences.
 
 const ROADMAP_CEO_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council making the final call on the implementation roadmap order.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 Be direct and authoritative.
 
 Present the full, final implementation roadmap, incorporating any reordering that the discussion showed a genuine, well argued reason for based on the concerns raised by Designer, CTO, or QA.
-Format each roadmap step on its own line as "Etap N opis", for example "Etap 1 Konfiguracja projektu i podstawowej infrastruktury".
+Format each roadmap step on its own line as "Step N description", for example "Step 1 Set up the project and base infrastructure".
 Do not add any commentary before or after the list.
-Do not use markdown headers or bullet points. Do not number steps with dots like "1.", only use the "Etap N" format.
+Do not use markdown headers or bullet points. Do not number steps with dots like "1.", only use the "Step N" format.
 Do not use dashes ("-", "–", "—").
 `;
 
 const ROADMAP_CEO_DECISION_USER_PROMPT = ({ steps, conversationHistory }) => `
 Original proposed roadmap order:
-${steps.map((s, i) => `Etap ${i + 1} ${s}`).join("\n")}
+${steps.map((s, i) => `Step ${i + 1} ${s}`).join("\n")}
 
 Full council discussion about the roadmap order:
 ${conversationHistory}
 
 As CEO, present the final implementation roadmap, reordering steps where the discussion showed a genuine, well argued reason to do so. Keep the original wording of each step unless a small clarification is needed.
-Format each step on its own line as "Etap N opis", renumbered sequentially starting from Etap 1. Return the list only, no other text before or after.
+Format each step on its own line as "Step N description", renumbered sequentially starting from Step 1. Return the list only, no other text before or after.
 `;
 
 module.exports = {

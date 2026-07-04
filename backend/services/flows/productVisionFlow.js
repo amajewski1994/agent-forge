@@ -54,7 +54,7 @@ async function runProductVisionFlow({ idea, topic, messages, topicStartIndex, se
   });
 
   return {
-    ceoDecision: rawCeoDecision?.trim() || `Idziemy z wizją produktu wypracowaną przez cały zespół.`,
+    ceoDecision: rawCeoDecision?.trim() || `We're going with the product vision the whole team worked out together.`,
   };
 }
 

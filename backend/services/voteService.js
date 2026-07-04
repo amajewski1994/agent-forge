@@ -28,10 +28,10 @@ async function generateAgentVote({ agentKey, conflict, conversationHistory, ownS
   try {
     const parsed = JSON.parse(extractJson(result));
     if (!["A", "B"].includes(parsed.optionId)) parsed.optionId = Math.random() < 0.5 ? "A" : "B";
-    if (!parsed.reason?.trim()) parsed.reason = "Zgodnie z priorytetami mojej roli.";
+    if (!parsed.reason?.trim()) parsed.reason = "In line with my role's priorities.";
     return parsed;
   } catch {
-    return { optionId: Math.random() < 0.5 ? "A" : "B", reason: "Zgodnie z priorytetami mojej roli." };
+    return { optionId: Math.random() < 0.5 ? "A" : "B", reason: "In line with my role's priorities." };
   }
 }
 
@@ -57,7 +57,7 @@ async function generateForcedVoteReason({ agentKey, conflict, optionLabel, ownSt
     systemPrompt,
     userPrompt: FORCED_VOTE_REASON_USER_PROMPT({ conflict, optionLabel, ownStatements }),
   });
-  return result?.trim() || "Zgodnie z tym, co już powiedziałem.";
+  return result?.trim() || "In line with what I already said.";
 }
 
 
@@ -150,10 +150,10 @@ async function generateFeatureVote({ agentKey, feature, conversationHistory, own
   try {
     const parsed = JSON.parse(extractJson(result));
     if (!["A", "B", "C"].includes(parsed.optionId)) parsed.optionId = "A";
-    if (!parsed.reason?.trim()) parsed.reason = "Zgodnie z priorytetami mojej roli.";
+    if (!parsed.reason?.trim()) parsed.reason = "In line with my role's priorities.";
     return parsed;
   } catch {
-    return { optionId: "A", reason: "Zgodnie z priorytetami mojej roli." };
+    return { optionId: "A", reason: "In line with my role's priorities." };
   }
 }
 
@@ -166,14 +166,14 @@ async function generateForcedFeatureVoteReason({ agentKey, feature, forcedOption
     systemPrompt,
     userPrompt: `The council discussed the feature: "${feature}".
 You have decided to vote for: ${optionLabel}.
-Write a brief reason (max 8 words, in Polish) explaining why.
+Write a brief reason (max 8 words, in English) explaining why.
 Return ONLY valid JSON: {"optionId":"${forcedOptionId}","reason":"your reason here"}`,
   });
   try {
     const parsed = JSON.parse(extractJson(result));
-    return { optionId: forcedOptionId, reason: parsed.reason?.trim() || "Zgodnie z priorytetami mojej roli." };
+    return { optionId: forcedOptionId, reason: parsed.reason?.trim() || "In line with my role's priorities." };
   } catch {
-    return { optionId: forcedOptionId, reason: "Zgodnie z priorytetami mojej roli." };
+    return { optionId: forcedOptionId, reason: "In line with my role's priorities." };
   }
 }
 
@@ -182,7 +182,7 @@ async function runFeatureVote({ feature, messages, send, agentStances = {} }) {
   send("conflict_detected", {
     id: conflictId,
     title: feature,
-    description: `Głosowanie na temat umieszczenia funkcji "${feature}" w zakresie produktu.`,
+    description: `Vote on whether to include the feature "${feature}" in the product scope.`,
   });
   send("vote_options", FEATURE_VOTE_OPTIONS);
 

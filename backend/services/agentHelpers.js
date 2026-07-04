@@ -99,7 +99,7 @@ async function generateCEOTopicDecision({ topic, conversationHistory, resolvedDe
     systemPrompt: CEO_TOPIC_DECISION_SYSTEM_PROMPT,
     userPrompt: CEO_TOPIC_DECISION_USER_PROMPT({ topic, conversationHistory, resolvedDecisions, voteWinner }),
   });
-  return result?.trim() || `Zespół idzie dalej z tym, co ustaliliśmy w temacie "${topic.title}".`;
+  return result?.trim() || `The team is moving forward with what we settled on for "${topic.title}".`;
 }
 
 function formatAgendaMessage(agenda) {
@@ -146,7 +146,7 @@ async function generateTopicSummary({ topicTitle, stageMessages }) {
     systemPrompt: TOPIC_SUMMARY_SYSTEM_PROMPT,
     userPrompt: TOPIC_SUMMARY_USER_PROMPT({ topicTitle, stageMessages }),
   });
-  return result?.trim() || "Dyskusja objęła główne aspekty tematu.";
+  return result?.trim() || "The discussion covered the main aspects of the topic.";
 }
 
 async function detectConflicts(messages, resolvedTopics = []) {

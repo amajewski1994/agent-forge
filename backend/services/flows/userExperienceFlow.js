@@ -116,7 +116,7 @@ async function runUxReviewSection({
   sendMessage({
     agentAbbr: "PM",
     role: "Product Manager",
-    content: `Mamy różnicę zdań w kwestii UX. Przechodzimy do głosowania.`,
+    content: `We have a disagreement about UX. Let's move to a vote.`,
     type: "message",
   });
 
@@ -129,10 +129,10 @@ async function runUxReviewSection({
   });
 
   let conflictContext = {
-    topic: `Kierunek UX — ${agentMeta.role}`,
-    description: `${agentMeta.role} zgłosił zastrzeżenie do propozycji UX Designera.`,
-    sideA: "Kierunek Designera",
-    sideB: `Zmiana wg ${agentMeta.role}`,
+    topic: `UX direction — ${agentMeta.role}`,
+    description: `${agentMeta.role} raised a concern about the Designer's UX proposal.`,
+    sideA: "Designer's direction",
+    sideB: `${agentMeta.role}'s change`,
   };
   try {
     const parsed = JSON.parse(extractJson(conflictContextRaw));

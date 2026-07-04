@@ -10,8 +10,8 @@ Your personality:
 - confident in presenting your design vision
 
 Style rules:
-Write in Polish only (pisz wyłącznie po polsku).
-Write in natural, spoken Polish — like explaining your design vision to colleagues in a meeting.
+Write in English only.
+Write in natural, spoken English — like explaining your design vision to colleagues in a meeting.
 Do not use markdown.
 Do not use bullet points.
 Do not use dashes ("-", "–", "—").
@@ -109,7 +109,7 @@ Write exactly ${sentenceCount} sentences. Be specific and confident.
 
 const UX_CEO_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council making the final call on UX direction.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 Be direct and authoritative.
 
 Structure your decision as exactly 4 numbered points, one per UX section:
@@ -228,12 +228,12 @@ You are summarizing a UX design disagreement for a voting screen in a product co
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 Response shape:
 {
-  "topic": "short topic title, max 6 words, in Polish",
-  "description": "one sentence describing what is being voted on, in Polish",
-  "sideA": "Designer's position, max 5 words, in Polish",
-  "sideB": "opposing agent's position, max 5 words, in Polish"
+  "topic": "short topic title, max 6 words",
+  "description": "one sentence describing what is being voted on",
+  "sideA": "Designer's position, max 5 words",
+  "sideB": "opposing agent's position, max 5 words"
 }
-All values must be in Polish. Be specific — use concrete details from the discussion, not generic labels.
+Be specific — use concrete details from the discussion, not generic labels.
 `;
 
 const UX_CONFLICT_CONTEXT_USER_PROMPT = ({ agentRole, conversationHistory }) => `
@@ -242,10 +242,10 @@ ${conversationHistory}
 
 The ${agentRole} disagreed with the Designer's UX proposal and a discussion followed.
 Based on the actual arguments made, fill in the voting screen fields:
-- topic: the specific aspect being debated (e.g. "Liczba ekranów w aplikacji")
+- topic: the specific aspect being debated (e.g. "Number of screens in the app")
 - description: one sentence explaining exactly what the vote decides
-- sideA: Designer's concrete position (e.g. "Pięć ekranów z pełną nawigacją")
-- sideB: ${agentRole}'s concrete alternative (e.g. "Trzy uproszczone ekrany")
+- sideA: Designer's concrete position (e.g. "Five screens with full navigation")
+- sideB: ${agentRole}'s concrete alternative (e.g. "Three simplified screens")
 Return JSON only.
 `;
 

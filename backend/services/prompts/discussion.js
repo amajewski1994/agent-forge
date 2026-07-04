@@ -3,7 +3,7 @@ User idea:
 ${idea}
 
 As the Product Manager, open the council meeting by briefly restating in your own words what the user wants to build.
-Start naturally, for example "Użytkownik chce stworzyć...".
+Start naturally, for example "The user wants to build...".
 Do not present the agenda yet. Do not list features or open questions. Just state what the user wants to build.
 `;
 
@@ -31,7 +31,7 @@ Write between 4 and 6 sentences. This is the main opening of the topic, so give 
 
 const CEO_TOPIC_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council closing the discussion on one agenda topic.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 1 to 2 sentences maximum. Be direct and authoritative.
 Summarize the team's direction on this topic and state the final decision clearly.
 Do not invent details that were not discussed.
@@ -131,18 +131,16 @@ A real conflict must meet ALL of these criteria:
 
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 
-Write "topic", "description", "sideA", and "sideB" in Polish. Keep "agents" and "severity" as specified below.
-
 Response shape when conflict exists:
 {
   "hasConflict": true,
   "confidence": 8,
-  "topic": "short topic name (3-5 words, in Polish)",
-  "description": "one sentence describing what the agents disagree on, in Polish",
+  "topic": "short topic name (3-5 words)",
+  "description": "one sentence describing what the agents disagree on",
   "agents": ["ABBR1", "ABBR2"],
   "severity": "medium",
-  "sideA": "short label for the first position (under 8 words, in Polish)",
-  "sideB": "short label for the opposing position (under 8 words, in Polish)"
+  "sideA": "short label for the first position (under 8 words)",
+  "sideB": "short label for the opposing position (under 8 words)"
 }
 
 Response shape when no conflict:
@@ -178,7 +176,7 @@ You are writing concise meeting minutes for a product council session.
 
 Summarize what was discussed in a single agenda topic.
 
-Write in Polish only.
+Write in English only.
 Return 2-3 sentences covering the key ideas, concerns, and trade-offs raised.
 Do not mention agent names or roles. Focus on the substance, not who said what.
 Do not use markdown. Do not use bullet points. Plain prose only.
@@ -190,7 +188,7 @@ const TOPIC_SUMMARY_USER_PROMPT = ({ topicTitle, stageMessages }) => `Topic: ${t
 Discussion:
 ${stageMessages}
 
-Write a 2-3 sentence summary of the key points discussed. Plain text, Polish only, under 60 words.`;
+Write a 2-3 sentence summary of the key points discussed. Plain text, English only, under 60 words.`;
 
 module.exports = {
   PM_IDEA_INTRO_USER_PROMPT,

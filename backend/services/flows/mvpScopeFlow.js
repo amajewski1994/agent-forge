@@ -55,7 +55,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
   } catch {}
   if (features.length !== 9) {
     features = features.slice(0, 9);
-    while (features.length < 9) features.push(`Funkcja ${features.length + 1}`);
+    while (features.length < 9) features.push(`Feature ${features.length + 1}`);
   }
 
   // PM presents all 9 features
@@ -96,7 +96,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
   }
 
   const categorizationMessage = [
-    "Oto wyniki analizy:",
+    "Here are the analysis results:",
     "",
     "1. Approved MVP:",
     ...approved.map((f) => `- ${f}`),
@@ -107,7 +107,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
     "3. Rejected:",
     ...rejected.map((f) => `- ${f}`),
     "",
-    "4. Do dyskusji:",
+    "4. For Discussion:",
     ...discussion.map((f) => `- ${f}`),
   ].join("\n");
   await new Promise((r) => setTimeout(r, 6000));
@@ -128,7 +128,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
     discussion: [...discussion],
   };
 
-  // Discuss each "Do dyskusji" feature one by one
+  // Discuss each "For Discussion" feature one by one
   for (let fi = 0; fi < discussion.length; fi++) {
     const feature = discussion[fi];
     const featureStartIndex = messages.length;
@@ -149,14 +149,14 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
 
     const featureTopic = {
       title: `MVP Scope: ${feature}`,
-      description: `Czy funkcja "${feature}" powinna być w MVP, przesunięta na Post-MVP, czy odrzucona całkowicie?`,
+      description: `Should the feature "${feature}" be in the MVP, moved to Post-MVP, or rejected entirely?`,
     };
 
     if (waitForProceed) {
       await new Promise((r) => setTimeout(r, 3000));
       const proceedPrompt = fi === 0
-        ? `Czy możemy przejść do omawiania pierwszego feature z grupy "Do dyskusji": „${feature}"?`
-        : `Czy możemy przejść do omawiania kolejnego feature: „${feature}"?`;
+        ? `Can we move on to discussing the first feature from the "For Discussion" group: "${feature}"?`
+        : `Can we move on to discussing the next feature: "${feature}"?`;
       sendMessage({ agentAbbr: "PM", role: "Product Manager", content: proceedPrompt, type: "message" });
       send("awaiting_feature_proceed", {});
       await waitForProceed();
@@ -184,7 +184,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
       sendMessage({ agentAbbr: meta.agentAbbr, role: meta.role, content: response, type: "message" });
     }
 
-    sendMessage({ agentAbbr: "PM", role: "Product Manager", content: `Przechodzimy do głosowania nad funkcją "${feature}".`, type: "message" });
+    sendMessage({ agentAbbr: "PM", role: "Product Manager", content: `Let's move to a vote on the feature "${feature}".`, type: "message" });
 
     const voteResult = await runFeatureVote({ feature, messages: messages.slice(featureStartIndex), send, agentStances });
     const winnerOptionId = voteResult?.winner?.id ?? "A";
@@ -204,7 +204,7 @@ async function runMvpScopeFlow({ idea, resolvedDecisions, messages, topicStartIn
     systemPrompt: MVP_SCOPE_CEO_FINAL_SYSTEM_PROMPT,
     userPrompt: MVP_SCOPE_CEO_FINAL_USER_PROMPT({ finalCategories }),
   });
-  const ceoDecision = ceoBuildFinalRaw?.trim() || `Finalizujemy zakres MVP i przechodzimy do kolejnych etapów.`;
+  const ceoDecision = ceoBuildFinalRaw?.trim() || `We're finalizing the MVP scope and moving on to the next stages.`;
 
   const customStageSummary = await callQwen({
     systemPrompt: MVP_SCOPE_STAGE_SUMMARY_SYSTEM_PROMPT,

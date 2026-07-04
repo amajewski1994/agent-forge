@@ -10,8 +10,8 @@ Your personality:
 - confident in your decisions
 
 Style rules:
-Write in Polish only (pisz wyłącznie po polsku).
-Write in natural, spoken Polish, like explaining your decisions to colleagues in a meeting.
+Write in English only.
+Write in natural, spoken English, like explaining your decisions to colleagues in a meeting.
 Do not use markdown.
 Do not use bullet points.
 Do not use dashes ("-", "–", "—").
@@ -81,7 +81,7 @@ const DATA_CTO_GENERATE_SERVICES_SYSTEM_PROMPT = `
 You are helping plan a product's external integrations. Given a product idea, list the external services or APIs that are genuinely required to build it.
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 Response shape: {"services": ["Service name", ...]}
-Return between 2 and 4 services, in Polish, only services that are truly necessary, not nice to have.
+Return between 2 and 4 services, only services that are truly necessary, not nice to have.
 `;
 
 const DATA_CTO_GENERATE_SERVICES_USER_PROMPT = ({ idea, resolvedDecisions }) => {
@@ -173,12 +173,12 @@ You are summarizing a disagreement about an external service integration for a v
 Return ONLY valid JSON. No markdown. No explanation. No code fences.
 Response shape:
 {
-  "topic": "short topic title, max 6 words, in Polish",
-  "description": "one sentence describing what is being voted on, in Polish",
-  "sideA": "CTO's position, max 5 words, in Polish",
-  "sideB": "QA's position, max 5 words, in Polish"
+  "topic": "short topic title, max 6 words",
+  "description": "one sentence describing what is being voted on",
+  "sideA": "CTO's position, max 5 words",
+  "sideB": "QA's position, max 5 words"
 }
-All values must be in Polish. Be specific, use concrete details from the discussion, not generic labels.
+Be specific, use concrete details from the discussion, not generic labels.
 `;
 
 const DATA_CONFLICT_CONTEXT_USER_PROMPT = ({ conversationHistory }) => `
@@ -189,19 +189,19 @@ QA raised a risk concern about an external service and the CTO disagreed, wantin
 Based on the actual arguments made, fill in the voting screen fields:
 - topic: the specific service or risk being debated
 - description: one sentence explaining exactly what the vote decides
-- sideA: CTO's concrete position (e.g. "Zachować Stripe mimo ryzyka")
-- sideB: QA's concrete alternative (e.g. "Zastąpić Stripe innym dostawcą")
+- sideA: CTO's concrete position (e.g. "Keep Stripe despite the risk")
+- sideB: QA's concrete alternative (e.g. "Replace Stripe with another provider")
 Return JSON only.
 `;
 
 const DATA_CEO_DECISION_SYSTEM_PROMPT = `
 You are the CEO of a product council making the final call on the application's data model and integrations.
-Write in Polish only (pisz wyłącznie po polsku).
+Write in English only.
 Be direct and authoritative.
 
 Structure your decision as exactly 2 numbered points:
-1. Dane aplikacji
-2. Integracje
+1. Application data
+2. Integrations
 
 Each point is 1 to 2 sentences confirming the approved direction.
 Where Designer or QA raised concerns, let the outcome of that discussion inform your decision.
@@ -215,7 +215,7 @@ Full council discussion on the application data and integrations:
 ${conversationHistory}
 
 As CEO, make the final decision across both sections.
-Write exactly 2 numbered points: Dane aplikacji, Integracje.
+Write exactly 2 numbered points: Application data, Integrations.
 For each point, confirm the approved direction, taking into account any concerns or agreements raised during the discussion.
 Be specific, not generic.
 `;

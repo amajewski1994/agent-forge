@@ -141,7 +141,7 @@ async function runDynamicDiscussion({
     sendMessage({
       agentAbbr: "PM",
       role: "Product Manager",
-      content: `Mamy różnicę zdań w kwestii "${conflict.topic}". Przechodzimy do głosowania.`,
+      content: `We have a disagreement on "${conflict.topic}". Let's move to a vote.`,
       type: "message",
     });
     const result = await runConflictVote({ conflict, messages, send });
@@ -154,7 +154,7 @@ async function runDynamicDiscussion({
       agentAbbr: "PM",
       role: "Product Manager",
       content:
-        "Widzę że jesteśmy zgodni. Oddaję głos CEO w celu podjęcia decyzji.",
+        "It looks like we're aligned. I'll hand it to the CEO to make the call.",
       type: "message",
     });
   }
@@ -214,7 +214,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
     sendMessage({
       agentAbbr: "PM",
       role: "Product Manager",
-      content: `Czy możemy przejść do pierwszego punktu: „${topicsToRun[0]?.title}"?`,
+      content: `Can we move on to the first item: "${topicsToRun[0]?.title}"?`,
       type: "message",
     });
     send("awaiting_proceed", {});
@@ -346,7 +346,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
       sendMessage({
         agentAbbr: "PM",
         role: "Product Manager",
-        content: `Zamknęliśmy temat "${topic.title}". Czy możemy przejść do kolejnego punktu: "${nextTopic.title}"?`,
+        content: `We've closed the topic "${topic.title}". Can we move on to the next item: "${nextTopic.title}"?`,
         type: "message",
       });
       send("awaiting_feature_proceed", {});
