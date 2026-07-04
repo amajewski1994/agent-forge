@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Conflict, Vote, VoteOption } from "@/types";
 import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
+import { AGENT_STYLE_MAP, FALLBACK_STYLE } from "@/constants/agentChatStyles";
 
 interface VoteCardProps {
   conflict: Conflict;
@@ -8,15 +9,6 @@ interface VoteCardProps {
   votes: Vote[];
   phase: CouncilPhase;
 }
-
-const AGENT_TEXT: Record<string, string> = {
-  PM:  "text-violet-400",
-  CTO: "text-cyan-400",
-  DES: "text-pink-400",
-  QA:  "text-amber-400",
-  CEO: "text-emerald-400",
-  ENG: "text-orange-400",
-};
 
 export default function VoteCard({ conflict, options, votes, phase }: VoteCardProps) {
   const regularVotes  = votes.filter((v) => !v.isTiebreaker);
@@ -89,7 +81,7 @@ export default function VoteCard({ conflict, options, votes, phase }: VoteCardPr
       {votes.length > 0 && (
         <div className="border-t border-slate-800/50 px-3 py-2 space-y-2.5">
           {votes.map((vote, i) => {
-            const textColor  = AGENT_TEXT[vote.agentAbbr] ?? "text-slate-400";
+            const textColor  = (AGENT_STYLE_MAP[vote.agentAbbr] ?? FALLBACK_STYLE).color;
             const optLabel   = options.find((o) => o.id === vote.optionId)?.label ?? vote.optionId;
             const tallyItem  = tally.find((t) => t.opt.id === vote.optionId);
             const isMinority = allVoted && (tallyItem?.count ?? 0) < votes.length / 2;

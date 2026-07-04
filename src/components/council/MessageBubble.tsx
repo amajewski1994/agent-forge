@@ -14,14 +14,6 @@ interface MessageBubbleProps {
   message: CouncilMessage;
 }
 
-const VOTE_AGENT_COLOR: Record<string, string> = {
-  PM: "text-violet-400",
-  CTO: "text-cyan-400",
-  DES: "text-pink-400",
-  QA: "text-amber-400",
-  CEO: "text-emerald-400",
-};
-
 function ConflictResultCard({ message }: MessageBubbleProps) {
   const { votes = [], options = [], conflictTitle, content } = message;
   const [open, setOpen] = useState(false);
@@ -86,7 +78,7 @@ function ConflictResultCard({ message }: MessageBubbleProps) {
                 options.find((o) => o.id === vote.optionId)?.label ??
                 vote.optionId;
               const agentColor =
-                VOTE_AGENT_COLOR[vote.agentAbbr] ?? "text-slate-400";
+                (AGENT_STYLE_MAP[vote.agentAbbr] ?? FALLBACK_STYLE).color;
               const isMinority =
                 votes.filter((v) => v.optionId === vote.optionId).length <
                 votes.length / 2;

@@ -4,21 +4,21 @@ import type { MessageType } from "@/types";
 export interface AgentChatStyle {
   color: string;
   bg: string;
-  icon: string;
+  avatar: string;
   iconBg: string;
 }
 
 export const AGENT_STYLE_MAP: Record<string, AgentChatStyle> = Object.fromEntries(
   AGENTS.map((a) => [
     a.abbr,
-    { color: a.chatColor, bg: a.chatBg, icon: a.icon, iconBg: a.iconBg },
+    { color: a.chatColor, bg: a.chatBg, avatar: a.avatar, iconBg: a.iconBg },
   ])
 );
 
 export const FALLBACK_STYLE: AgentChatStyle = {
   color: "text-slate-400",
   bg: "bg-slate-800/50 border-slate-700/50",
-  icon: "Crown",
+  avatar: "/avatars/AF - CEO.png",
   iconBg: "bg-slate-700",
 };
 

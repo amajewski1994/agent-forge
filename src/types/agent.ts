@@ -7,7 +7,7 @@ export interface Agent {
   description: string;
   status: AgentStatus;
   color: string;
-  icon: string;
+  avatar: string;
   iconBg: string;
   abbr: string;
   chatColor: string;

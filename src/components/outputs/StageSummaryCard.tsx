@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TopicSummary } from "@/types";
+import { AGENT_STYLE_MAP, FALLBACK_STYLE } from "@/constants/agentChatStyles";
 
 interface StageSummaryCardProps {
   summary: TopicSummary;
@@ -9,14 +10,6 @@ interface StageSummaryCardProps {
 }
 
 type Section = "summary" | "decision" | "conflict" | null;
-
-const VOTE_AGENT_COLOR: Record<string, string> = {
-  PM:  "text-violet-400",
-  CTO: "text-cyan-400",
-  DES: "text-pink-400",
-  QA:  "text-amber-400",
-  CEO: "text-emerald-400",
-};
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -84,7 +77,7 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
                 <div className="space-y-1.5">
                   {conflict.votes.map((vote, i) => {
                     const optLabel = conflict.options.find((o) => o.id === vote.optionId)?.label ?? vote.optionId;
-                    const agentColor = VOTE_AGENT_COLOR[vote.agentAbbr] ?? "text-slate-400";
+                    const agentColor = (AGENT_STYLE_MAP[vote.agentAbbr] ?? FALLBACK_STYLE).color;
                     const isMinority =
                       conflict.votes.filter((v) => v.optionId === vote.optionId).length < conflict.votes.length / 2;
                     return (

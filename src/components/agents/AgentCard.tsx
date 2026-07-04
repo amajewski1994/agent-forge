@@ -1,24 +1,7 @@
 import { CARD_STYLE } from "@/constants/agentStyles";
 import type { Agent } from "@/types";
-import {
-  Crown,
-  LayoutDashboard,
-  Cpu,
-  Palette,
-  ShieldCheck,
-  Code2,
-  type LucideIcon,
-} from "lucide-react";
+import Image from "next/image";
 import AgentStatusBadge from "./AgentStatusBadge";
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  Crown,
-  LayoutDashboard,
-  Cpu,
-  Palette,
-  ShieldCheck,
-  Code2,
-};
 
 interface AgentCardProps {
   agent: Agent;
@@ -27,7 +10,6 @@ interface AgentCardProps {
 export default function AgentCard({ agent }: AgentCardProps) {
   const isActive = agent.status === "active";
   const isIdle = agent.status === "idle";
-  const IconComponent = ICON_MAP[agent.icon] ?? Crown;
 
   return (
     <div
@@ -38,16 +20,17 @@ export default function AgentCard({ agent }: AgentCardProps) {
     >
       <div
         className={[
-          "rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-sm",
+          "rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-sm",
           isActive ? "w-10 h-10" : "w-9 h-9",
-          agent.iconBg,
           isIdle ? "opacity-40" : "",
         ].join(" ")}
       >
-        <IconComponent
-          size={isActive ? 18 : 16}
-          className="text-white drop-shadow-sm"
-          strokeWidth={1.75}
+        <Image
+          src={agent.avatar}
+          alt={agent.name}
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
         />
       </div>
 
