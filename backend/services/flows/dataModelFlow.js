@@ -188,7 +188,7 @@ async function runDataModelFlow({ idea, topic, resolvedDecisions, messages, topi
   });
 
   return {
-    ceoDecision: rawCeoDecision?.trim() || `Zatwierdzamy model danych i integracje zaproponowane przez CTO.`,
+    ceoDecision: rawCeoDecision?.trim() || `We're approving the data model and integrations proposed by the CTO.`,
   };
 }
 

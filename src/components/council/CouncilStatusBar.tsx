@@ -16,20 +16,20 @@ function getStatus(
   currentTopic: { stageNumber: number; topicTitle: string } | null,
 ): { label: string; sublabel?: string; color: string; pulse: boolean } | null {
   if (currentTopic) {
-    return { label: `Etap ${currentTopic.stageNumber}`, sublabel: currentTopic.topicTitle, color: "text-indigo-400", pulse: true };
+    return { label: `Stage ${currentTopic.stageNumber}`, sublabel: currentTopic.topicTitle, color: "text-indigo-400", pulse: true };
   }
   switch (phase) {
     case "idle":     return null;
-    case "analysis":   return { label: "Analizowanie",          color: "text-amber-400",   pulse: true  };
-    case "activating": return { label: "Uruchamianie agentów", color: "text-amber-400",   pulse: true  };
-    case "council":  return { label: "Debata",                color: "text-emerald-400", pulse: true  };
-    case "conflict": return { label: "Wykryto konflikt",      color: "text-amber-400",   pulse: true  };
-    case "voting":   return { label: "Głosowanie",            color: "text-violet-400",  pulse: true  };
-    case "decision":          return { label: "Decyzja CEO",           color: "text-emerald-400", pulse: false };
-    case "awaiting_proceed":  return { label: "Oczekiwanie na Ciebie",   color: "text-indigo-400",  pulse: false };
-    case "awaiting_generate": return { label: "Gotowe do generowania",   color: "text-indigo-400",  pulse: false };
-    case "output":            return { label: "Generowanie dokumentów",  color: "text-slate-400",   pulse: true  };
-    case "complete":         return { label: "Sesja zakończona",      color: "text-slate-500",   pulse: false };
+    case "analysis":   return { label: "Analyzing",             color: "text-amber-400",   pulse: true  };
+    case "activating": return { label: "Activating agents",     color: "text-amber-400",   pulse: true  };
+    case "council":  return { label: "Debating",                color: "text-emerald-400", pulse: true  };
+    case "conflict": return { label: "Conflict detected",       color: "text-amber-400",   pulse: true  };
+    case "voting":   return { label: "Voting",                  color: "text-violet-400",  pulse: true  };
+    case "decision":          return { label: "CEO Decision",           color: "text-emerald-400", pulse: false };
+    case "awaiting_proceed":  return { label: "Waiting for you",         color: "text-indigo-400",  pulse: false };
+    case "awaiting_generate": return { label: "Ready to generate",      color: "text-indigo-400",  pulse: false };
+    case "output":            return { label: "Generating documents",   color: "text-slate-400",   pulse: true  };
+    case "complete":         return { label: "Session complete",       color: "text-slate-500",   pulse: false };
   }
 }
 

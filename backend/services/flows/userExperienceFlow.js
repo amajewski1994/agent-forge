@@ -255,7 +255,7 @@ async function runUserExperienceFlow({ idea, topic, resolvedDecisions, messages,
   });
 
   return {
-    ceoDecision: rawCeoDecision?.trim() || `Zatwierdzamy kierunek UX zaprezentowany przez Designera.`,
+    ceoDecision: rawCeoDecision?.trim() || `We're approving the UX direction presented by the Designer.`,
   };
 }
 

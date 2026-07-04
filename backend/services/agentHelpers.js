@@ -104,7 +104,7 @@ async function generateCEOTopicDecision({ topic, conversationHistory, resolvedDe
 
 function formatAgendaMessage(agenda) {
   const list = agenda.map((topic, idx) => `${idx + 1}. ${topic.title}`).join("\n");
-  return `Oto nasza agenda na to spotkanie. Przejdziemy po kolei przez te punkty:\n\n${list}`;
+  return `Here's our agenda for this meeting. We'll go through these points in order:\n\n${list}`;
 }
 
 async function classifyProject(idea) {

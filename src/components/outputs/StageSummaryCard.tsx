@@ -40,19 +40,19 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
       {/* Header */}
       <div className="px-3 py-2 border-b border-slate-700/30 flex items-center gap-2">
         <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider shrink-0">
-          Etap {summary.stageNumber}
+          Stage {summary.stageNumber}
         </span>
         <span className="text-[10px] text-slate-600">·</span>
         <span className="text-[11px] text-slate-300 font-medium truncate">{summary.topicTitle}</span>
       </div>
 
       <div>
-        {/* Podsumowanie */}
+        {/* Summary */}
         <button
           onClick={() => toggle("summary")}
           className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors"
         >
-          <span className="text-[11px] font-medium text-slate-400">Podsumowanie</span>
+          <span className="text-[11px] font-medium text-slate-400">Summary</span>
           <ChevronIcon open={openSection === "summary"} />
         </button>
         {openSection === "summary" && (
@@ -61,14 +61,14 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
           </div>
         )}
 
-        {/* Głosowanie (only when resolved by vote) */}
+        {/* Voting (only when resolved by vote) */}
         {conflict && (
           <>
             <button
               onClick={() => toggle("conflict")}
               className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors border-t border-slate-700/20"
             >
-              <span className="text-[11px] font-medium text-slate-400 truncate">Głosowanie – {summary.topicTitle}</span>
+              <span className="text-[11px] font-medium text-slate-400 truncate">Voting – {summary.topicTitle}</span>
               <ChevronIcon open={openSection === "conflict"} />
             </button>
             {openSection === "conflict" && (
@@ -115,14 +115,14 @@ export default function StageSummaryCard({ summary, delay }: StageSummaryCardPro
           </>
         )}
 
-        {/* Decyzja */}
+        {/* Decision */}
         <button
           onClick={() => toggle("decision")}
           className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/30 transition-colors border-t border-slate-700/20"
         >
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 shrink-0" />
-            <span className="text-[11px] font-medium text-emerald-400">Decyzja</span>
+            <span className="text-[11px] font-medium text-emerald-400">Decision</span>
           </div>
           <ChevronIcon open={openSection === "decision"} />
         </button>

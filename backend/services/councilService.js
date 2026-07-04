@@ -241,7 +241,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
       sendMessage({
         agentAbbr: "PM",
         role: "Product Manager",
-        content: `Przechodzimy do punktu numer ${stageNumber}: ${topic.title}.`,
+        content: `Moving on to item number ${stageNumber}: ${topic.title}.`,
         type: "message",
       });
     }
