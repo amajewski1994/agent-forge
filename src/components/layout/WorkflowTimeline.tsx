@@ -55,9 +55,9 @@ export default function WorkflowTimeline() {
   }));
 
   return (
-    <div className="shrink-0 border-t border-slate-800/60 px-6 py-4 bg-slate-950/90">
-      <div className="flex items-center gap-4">
-        <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider shrink-0">
+    <div className="shrink-0 border-t border-slate-800/60 px-3 min-[1000px]:px-6 py-3 min-[1000px]:py-4 bg-slate-950/90 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-4 min-w-max min-[1000px]:min-w-0">
+        <span className="hidden min-[1000px]:inline text-xs font-semibold text-slate-600 uppercase tracking-wider shrink-0">
           Council Workflow
         </span>
 

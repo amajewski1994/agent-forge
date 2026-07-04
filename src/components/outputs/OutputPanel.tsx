@@ -28,7 +28,7 @@ export default function DecisionPanel() {
   const showVoting = activeConflict !== null && voteOptions.length > 0;
 
   return (
-    <aside className="flex flex-col overflow-hidden">
+    <aside className="flex flex-col overflow-hidden h-full">
       <div className="px-4 py-3 border-b border-slate-800/60">
         <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Outputs
