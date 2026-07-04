@@ -31,7 +31,8 @@ export default function PromptInput() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleStart();
     }
   };
@@ -61,7 +62,7 @@ export default function PromptInput() {
             {isRunning ? (
               <>
                 <span className="w-3 h-3 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
-                {PHASE_LABEL[phase]}
+                {/* {PHASE_LABEL[phase]} */}
               </>
             ) : (
               <>

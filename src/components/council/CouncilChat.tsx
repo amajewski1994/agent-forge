@@ -23,7 +23,7 @@ const PHASE_HEADER: Record<CouncilPhase, string> = {
 const COUNCIL_THINKING_PHASES: CouncilPhase[] = ["council", "conflict", "voting"];
 
 export default function CouncilChat() {
-  const { messages, phase, submittedIdea, proceed, generateMvpPackage, typingAgent, isRunning, spinnerPhase } = useCouncilSim();
+  const { messages, phase, submittedIdea, proceed, generateMvpPackage, typingAgent, isRunning, spinnerPhase, ideaError } = useCouncilSim();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const showCouncilThinking =
@@ -53,8 +53,14 @@ export default function CouncilChat() {
       </div>
 
 
-      {phase === "idle" && messages.length === 0 && !submittedIdea && (
-        <p className="text-xs text-slate-700 text-center py-10">
+      {phase === "idle" && messages.length === 0 && !submittedIdea && ideaError && (
+        <p className="text-xl sm:text-2xl font-semibold text-rose-400 text-center py-16">
+          {ideaError}
+        </p>
+      )}
+
+      {phase === "idle" && messages.length === 0 && !submittedIdea && !ideaError && (
+        <p className="text-xl sm:text-2xl font-semibold text-slate-400 text-center py-16">
           Enter an idea and start the council.
         </p>
       )}

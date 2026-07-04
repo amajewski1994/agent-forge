@@ -50,6 +50,7 @@ export interface CouncilSimState {
   councilFinished: boolean;
   prd: MvpReport | null;
   isPrdGenerating: boolean;
+  ideaError: string | null;
   generatePrd: () => void;
   generateMvpPackage: () => void;
   start: (idea: string) => void;
@@ -129,6 +130,7 @@ export function useCouncilSimulation(): CouncilSimState {
   const [councilFinished, setCouncilFinished] = useState(false);
   const [prd, setPrd] = useState<MvpReport | null>(null);
   const [isPrdGenerating, setIsPrdGenerating] = useState(false);
+  const [ideaError, setIdeaError] = useState<string | null>(null);
 
   const esRef = useRef<EventSource | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -210,6 +212,7 @@ export function useCouncilSimulation(): CouncilSimState {
     // Reset all state
     const normalizedIdea = idea.charAt(0).toUpperCase() + idea.slice(1);
     setSubmittedIdea(normalizedIdea);
+    setIdeaError(null);
     setAgenda([]);
     setSpinnerPhase("analyzing");
     setAgendaUnlocked(false);
@@ -486,6 +489,43 @@ export function useCouncilSimulation(): CouncilSimState {
       schedule(() => setPhase("complete"), 7000);
     });
 
+    // ── Invalid idea — reject and send the user back to the start ─────────
+    es.addEventListener("invalid_idea", (e: MessageEvent) => {
+      es.close();
+      esRef.current = null;
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+
+      let message = "unknown idea, try again.";
+      try {
+        const data = JSON.parse(e.data);
+        if (data?.message) message = data.message;
+      } catch {}
+
+      setIdeaError(message);
+      setPhase("idle");
+      setSubmittedIdea("");
+      setAgenda([]);
+      setSpinnerPhase(null);
+      setAgendaUnlocked(false);
+      setMessages([]);
+      setDecisions([]);
+      setConflicts([]);
+      setActiveConflict(null);
+      setVotes([]);
+      setVoteOptions([]);
+      setOutputItems(OUTPUT_ITEMS_BASE);
+      setTopicSummaries([]);
+      setCurrentTopic(null);
+      setActivatedAgents([]);
+      setTypingAgent(null);
+      setCouncilStarted(false);
+      setCouncilFinished(false);
+      setPrd(null);
+      setIsPrdGenerating(false);
+      councilStartedRef.current = false;
+    });
+
     // ── Cleanup ────────────────────────────────────────────────────────────
     es.addEventListener("done", (e: MessageEvent) => {
       try {
@@ -527,6 +567,7 @@ export function useCouncilSimulation(): CouncilSimState {
     councilFinished,
     prd,
     isPrdGenerating,
+    ideaError,
     generatePrd,
     generateMvpPackage,
     start,

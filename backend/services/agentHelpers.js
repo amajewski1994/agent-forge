@@ -113,9 +113,9 @@ async function classifyProject(idea) {
     userPrompt: CLASSIFY_PROJECT_USER_PROMPT({ idea }),
   });
   try {
-    return JSON.parse(extractJson(result));
+    return { valid: true, ...JSON.parse(extractJson(result)) };
   } catch {
-    return { category: "Other", confidence: 0, reason: "Invalid JSON response" };
+    return { valid: true, category: "Other", confidence: 0, reason: "Invalid JSON response" };
   }
 }
 

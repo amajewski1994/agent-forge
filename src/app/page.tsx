@@ -19,8 +19,7 @@ export default function Home() {
             </svg>
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-100 leading-none tracking-tight">AgentForge</h1>
-            <p className="text-xs text-slate-500 leading-none mt-0.5">AI Product Council</p>
+            <h1 className="text-xl font-extrabold text-white leading-none tracking-tight">AgentForge</h1>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">

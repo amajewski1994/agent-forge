@@ -101,9 +101,13 @@ app.get("/api/council/start", async (req, res) => {
   } catch (error) {
     console.error("Council error:", error);
 
-    send("error", {
-      message: error.message || "Council workflow failed",
-    });
+    if (error.code === "INVALID_IDEA") {
+      send("invalid_idea", { message: error.message });
+    } else {
+      send("error", {
+        message: error.message || "Council workflow failed",
+      });
+    }
 
     res.end();
   }

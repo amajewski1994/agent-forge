@@ -190,6 +190,12 @@ async function buildCouncilWorkflow(idea, options = {}) {
     JSON.stringify(projectCategory, null, 2),
   );
 
+  if (projectCategory.valid === false) {
+    const error = new Error("unknown idea, try again.");
+    error.code = "INVALID_IDEA";
+    throw error;
+  }
+
   const agenda = await buildAgenda(idea, projectCategory.category);
   console.log("[Council Agenda]", JSON.stringify(agenda, null, 2));
   send("agenda_ready", agenda);
