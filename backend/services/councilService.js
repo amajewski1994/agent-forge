@@ -131,7 +131,6 @@ async function runDynamicDiscussion({
     messages.slice(topicStartIndex),
     resolvedTopics,
   );
-  console.log("[Conflict Detection]", JSON.stringify(conflict, null, 2));
 
   let voteWinner = null;
   let conflictData = null;
@@ -185,10 +184,6 @@ async function buildCouncilWorkflow(idea, options = {}) {
   };
 
   const projectCategory = await classifyProject(idea);
-  console.log(
-    "[Project Classification]",
-    JSON.stringify(projectCategory, null, 2),
-  );
 
   if (projectCategory.valid === false) {
     const error = new Error("unknown idea, try again.");
@@ -197,7 +192,6 @@ async function buildCouncilWorkflow(idea, options = {}) {
   }
 
   const agenda = await buildAgenda(idea, projectCategory.category);
-  console.log("[Council Agenda]", JSON.stringify(agenda, null, 2));
   send("agenda_ready", agenda);
 
   const pmIdeaIntro = await generatePMIdeaIntro({ idea });
@@ -233,7 +227,6 @@ async function buildCouncilWorkflow(idea, options = {}) {
     const topic = topicsToRun[topicIndex];
     const isLastTopic = topicIndex === topicsToRun.length - 1;
     stageNumber++;
-    console.log("[Agenda Topic]", topic.title);
     send("topic_start", { stageNumber, topicTitle: topic.title });
     const topicStartIndex = messages.length;
 

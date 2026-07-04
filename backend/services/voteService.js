@@ -80,7 +80,6 @@ async function runConflictVote({ conflict, messages, send }) {
       messages.filter((m) => m.agentAbbr === agent.abbr).map((m) => m.content).join("\n") || null;
 
     const { stance } = await determineAgentStance({ agentKey: agent.key, conflict, ownStatements });
-    console.log(`[Vote Stance] ${agent.abbr}:`, stance);
 
     let vote;
     if (stance === "A" || stance === "B") {

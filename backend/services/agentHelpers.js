@@ -80,7 +80,6 @@ async function generateCheckedAgentReply(params) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     response = await generateAgentReply(paramsWithCount);
     const inScope = await validateAgentScope({ agentKey: params.agentKey, scopeDescription, message: response });
-    console.log(`[Scope Check] ${params.agentKey} (attempt ${attempt}):`, inScope ? "in scope" : "out of scope, retrying");
     if (inScope) return response;
   }
   return response;
