@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agent Society – AI Product Council
 
-## Getting Started
+> Multi-agent AI system that simulates a real product team to transform an idea into a complete MVP plan using Qwen models on Alibaba Cloud.
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Agent Society** is a multi-agent decision system where specialized AI agents collaborate to design a product MVP.
+
+Instead of relying on a single LLM response, multiple AI agents assume different professional roles, discuss trade-offs, identify risks, resolve conflicts through voting, and produce a structured implementation plan.
+
+The project was created for the **Qwen AI Hackathon** and demonstrates how multiple AI agents can cooperate to solve complex product planning tasks.
+
+---
+
+## Features
+
+- Multi-agent workflow
+- AI Product Council simulation
+- Role-based reasoning
+- Conflict detection and voting
+- CEO arbitration
+- Live conversation stream
+- Automatic MVP package generation
+
+Generated output includes:
+
+- Product Requirements Document (PRD)
+- MVP Scope
+- User Flow
+- Technical Architecture
+- Database Schema
+- API Endpoints
+- Implementation Roadmap
+
+---
+
+## AI Agents
+
+| Agent     | Responsibility                                 |
+| --------- | ---------------------------------------------- |
+| PM        | Defines product vision and MVP scope           |
+| CTO       | Reviews technical feasibility and architecture |
+| Designer  | Optimizes UX and user flows                    |
+| QA & Risk | Identifies risks and edge cases                |
+| CEO       | Resolves conflicts and makes final decisions   |
+| Engineer  | Generates the final implementation package     |
+
+---
+
+## Workflow
+
+1. User submits a product idea.
+2. PM classifies the project.
+3. Product agenda is generated.
+4. Agents discuss each agenda item.
+5. Conflicts are detected.
+6. Agents vote on competing solutions.
+7. CEO makes the final decision.
+8. Engineer generates the complete MVP package.
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+
+### Backend
+
+- Node.js
+- Express
+- Server-Sent Events (SSE)
+
+### AI
+
+- Qwen API
+- Alibaba Cloud DashScope
+- OpenAI Compatible API
+
+### Deployment
+
+- Backend deployed on Alibaba Cloud ECS
+- Frontend hosted on GitHub Pages
+
+---
+
+## Environment Variables
+
+### Backend
+
+```env
+PORT=4000
+HOST=0.0.0.0
+FRONTEND_URL=https://amajewski1994.github.io
+QWEN_API_KEY=YOUR_QWEN_API_KEY
+QWEN_MODEL=qwen_model_name_ex._qwen-plus
+QWEN_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Frontend
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_BACKEND_URL=http://47.236.51.15:4000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Running Locally
 
-To learn more about Next.js, take a look at the following resources:
+### Backend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Frontend
 
-## Deploy on Vercel
+```bash
+npm install
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Alibaba Cloud Integration
+
+The backend communicates with **Qwen** using Alibaba Cloud DashScope's OpenAI-compatible endpoint.
+
+The implementation can be found in:
+
+```text
+backend/services/qwenService.js
+```
+
+---
+
+## License
+
+This project is released under the MIT License.
+
+See the `LICENSE` file for details.
