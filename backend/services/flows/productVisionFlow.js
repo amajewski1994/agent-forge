@@ -19,19 +19,19 @@ async function runProductVisionFlow({ idea, topic, messages, topicStartIndex, se
 
   const ctoVision = await callQwen({
     systemPrompt: AGENT_PROMPTS.CTO.systemPrompt,
-    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount()),
+    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount(), "CTO"),
   });
   sendMessage({ agentAbbr: "CTO", role: "Chief Technology Officer", content: ctoVision, type: "message" });
 
   const designerVision = await callQwen({
     systemPrompt: AGENT_PROMPTS.DESIGNER.systemPrompt,
-    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount()),
+    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount(), "DESIGNER"),
   });
   sendMessage({ agentAbbr: "DES", role: "Product Designer", content: designerVision, type: "message" });
 
   const qaVision = await callQwen({
     systemPrompt: AGENT_PROMPTS.QA.systemPrompt,
-    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount()),
+    userPrompt: PRODUCT_VISION_AGENT_VISION_USER_PROMPT(idea, topic, randomSentenceCount(), "QA"),
   });
   sendMessage({ agentAbbr: "QA", role: "Quality Analyst", content: qaVision, type: "message" });
 

@@ -2,7 +2,7 @@ const OpenAI = require("openai");
 
 const client = new OpenAI({
   apiKey: process.env.QWEN_API_KEY,
-  baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+  baseURL: process.env.QWEN_URL,
 });
 
 async function callQwen({ systemPrompt, userPrompt, maxTokens }) {

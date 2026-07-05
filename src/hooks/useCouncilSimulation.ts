@@ -31,8 +31,6 @@ export type CouncilPhase =
 export interface CouncilSimState {
   phase: CouncilPhase;
   messages: CouncilMessage[];
-  decisions: Decision[];
-  conflicts: Conflict[];
   activeConflict: Conflict | null;
   votes: Vote[];
   voteOptions: VoteOption[];
@@ -56,9 +54,6 @@ export interface CouncilSimState {
   start: (idea: string) => void;
   proceed: () => void;
 }
-
-const SPEAKING_ORDER_ABBRS = ["PM", "CTO", "DES", "QA", "CEO"];
-const VOTE_ORDER_ABBRS = ["PM", "CTO", "DES", "QA"];
 
 function computeAgentStatuses(
   phase: CouncilPhase,
@@ -101,15 +96,13 @@ function nowTime(): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const BACKEND_URL = "http://localhost:4000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 // ── hook ──────────────────────────────────────────────────────────────────
 
 export function useCouncilSimulation(): CouncilSimState {
   const [phase, setPhase] = useState<CouncilPhase>("idle");
   const [messages, setMessages] = useState<CouncilMessage[]>([]);
-  const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [activeConflict, setActiveConflict] = useState<Conflict | null>(null);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [voteOptions, setVoteOptions] = useState<VoteOption[]>([]);
@@ -218,8 +211,6 @@ export function useCouncilSimulation(): CouncilSimState {
     setAgendaUnlocked(false);
     setPhase("analysis");
     setMessages([]);
-    setDecisions([]);
-    setConflicts([]);
     setActiveConflict(null);
     setVotes([]);
     setVoteOptions([]);
@@ -243,7 +234,9 @@ export function useCouncilSimulation(): CouncilSimState {
     type QueueItem =
       | { kind: "message"; msg: CouncilMessage }
       | { kind: "phase"; value: CouncilPhase }
-      | { kind: "conflict"; data: Conflict };
+      | { kind: "conflict"; data: Conflict }
+      | { kind: "topic_start"; data: { stageNumber: number; topicTitle: string } }
+      | { kind: "stage_summary"; data: TopicSummary };
 
     const msgQueue: QueueItem[] = [];
     let queueBusy = true; // held until activation completes
@@ -260,6 +253,23 @@ export function useCouncilSimulation(): CouncilSimState {
       if (item.kind === "phase") {
         setTypingAgent(null);
         setPhase(item.value);
+        timers.current.push(setTimeout(processNext, 50));
+        return;
+      }
+
+      if (item.kind === "topic_start") {
+        setCurrentTopic(item.data);
+        timers.current.push(setTimeout(processNext, 50));
+        return;
+      }
+
+      if (item.kind === "stage_summary") {
+        setCurrentTopic(null);
+        setTopicSummaries((prev) => {
+          const next = [...prev, item.data];
+          prdDataRef.current.topicSummaries = next;
+          return next;
+        });
         timers.current.push(setTimeout(processNext, 50));
         return;
       }
@@ -302,23 +312,12 @@ export function useCouncilSimulation(): CouncilSimState {
                 const { winner, tally, votes: finalVotes, options: finalOptions, conflictTopic } = complete;
                 if (conflictTopic) {
                   const newDecision = { id: Date.now(), text: `${conflictTopic}: ${winner.label}` };
-                  setDecisions((prev) => {
-                    const next = [...prev, newDecision];
-                    prdDataRef.current.decisions = next;
-                    return next;
-                  });
+                  prdDataRef.current.decisions = [...prdDataRef.current.decisions, newDecision];
                 }
                 setActiveConflict((prev) => {
                   if (!prev) return null;
                   const isBinaryVote = (finalOptions?.length ?? 2) === 2;
                   const scoreStr = isBinaryVote ? ` (${tally.A ?? 0}-${tally.B ?? 0})` : "";
-                  const resolved: Conflict = {
-                    ...prev,
-                    resolution: `${winner.label}${scoreStr}`,
-                    votes: finalVotes,
-                    options: finalOptions,
-                  };
-                  setConflicts((c) => c.some((x) => x.id === resolved.id) ? c : [...c, resolved]);
                   const resultMsgId = -(prev.id + 1);
                   setMessages((msgs) =>
                     msgs.some((m) => m.id === resultMsgId)
@@ -443,23 +442,21 @@ export function useCouncilSimulation(): CouncilSimState {
       if (!queueBusy) processNext();
     });
 
-    // ── Stage summaries ────────────────────────────────────────────────────
+    // ── Stage summaries — queued so they activate in sync with the chat, ──
+    // only once the CEO's decision for that stage has actually been shown ──
     es.addEventListener("topic_start", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as {
         stageNumber: number;
         topicTitle: string;
       };
-      setCurrentTopic(data);
+      msgQueue.push({ kind: "topic_start", data });
+      if (!queueBusy) processNext();
     });
 
     es.addEventListener("stage_summary", (e: MessageEvent) => {
       const data = JSON.parse(e.data) as TopicSummary;
-      setCurrentTopic(null);
-      setTopicSummaries((prev) => {
-        const next = [...prev, data];
-        prdDataRef.current.topicSummaries = next;
-        return next;
-      });
+      msgQueue.push({ kind: "stage_summary", data });
+      if (!queueBusy) processNext();
     });
 
     // ── Awaiting generate ──────────────────────────────────────────────────
@@ -509,8 +506,6 @@ export function useCouncilSimulation(): CouncilSimState {
       setSpinnerPhase(null);
       setAgendaUnlocked(false);
       setMessages([]);
-      setDecisions([]);
-      setConflicts([]);
       setActiveConflict(null);
       setVotes([]);
       setVoteOptions([]);
@@ -548,8 +543,6 @@ export function useCouncilSimulation(): CouncilSimState {
   return {
     phase,
     messages,
-    decisions,
-    conflicts,
     activeConflict,
     votes,
     voteOptions,

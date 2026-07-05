@@ -2,21 +2,6 @@
 
 import { useState } from "react";
 import { useCouncilSim } from "@/context/CouncilSimContext";
-import type { CouncilPhase } from "@/hooks/useCouncilSimulation";
-
-const PHASE_LABEL: Record<CouncilPhase, string> = {
-  idle:             "Start Council",
-  analysis:         "Analyzing...",
-  activating:       "Activating agents...",
-  council:          "In council...",
-  conflict:         "Resolving conflict...",
-  voting:           "Agents voting...",
-  decision:         "Deciding...",
-  awaiting_proceed:  "Waiting for you...",
-  awaiting_generate: "Waiting for you...",
-  output:            "Generating output...",
-  complete:         "Start Council",
-};
 
 export default function PromptInput() {
   const [idea, setIdea] = useState("");
@@ -60,10 +45,7 @@ export default function PromptInput() {
             }`}
           >
             {isRunning ? (
-              <>
-                <span className="w-3 h-3 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
-                {/* {PHASE_LABEL[phase]} */}
-              </>
+              <span className="w-3 h-3 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
             ) : (
               <>
                 Start Council

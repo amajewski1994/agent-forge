@@ -58,7 +58,7 @@ async function runRoadmapReviewSection({
   sendMessage({ agentAbbr: agentMeta.agentAbbr, role: agentMeta.role, content: message, type: "message" });
 }
 
-async function runImplementationRoadmapFlow({ idea, topic, resolvedDecisions, messages, topicStartIndex, sendMessage, send }) {
+async function runImplementationRoadmapFlow({ idea, topic, resolvedDecisions, messages, topicStartIndex, sendMessage }) {
   // PM opens the stage
   const pmOpening = await callQwen({
     systemPrompt: AGENT_PROMPTS.PM.systemPrompt,

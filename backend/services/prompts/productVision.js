@@ -10,7 +10,16 @@ Tell the team what we are discussing and ask the CTO, Designer, and QA each to s
 Write exactly 3 sentences. Be direct and natural, like in a real product meeting.
 `;
 
-const PRODUCT_VISION_AGENT_VISION_USER_PROMPT = (idea, topic, sentenceCount) => `
+const PRODUCT_VISION_AGENT_VISION_TONE = {
+  CTO: `Speak like an engineer sizing up a system, not like someone pitching the product.
+Do not open with "We are building" or "We're building". Start from the technical angle instead, for example what would need to be true for this to hold up, what breaks first, or what the architecture has to support.`,
+  DESIGNER: `Speak like someone picturing the user going through this, not like someone pitching the product.
+Do not open with "We are building" or "We're building". Start from the user's perspective instead, for example what the user sees first, what they feel, or where they would get stuck.`,
+  QA: `Speak like someone stress testing the idea, not like someone pitching the product.
+Do not open with "We are building" or "We're building". Start from a skeptical angle instead, for example what could go wrong, what assumption needs proof, or what would break trust.`,
+};
+
+const PRODUCT_VISION_AGENT_VISION_USER_PROMPT = (idea, topic, sentenceCount, role) => `
 User idea:
 ${idea}
 
@@ -19,6 +28,7 @@ Question to answer: ${topic.description}
 
 The Product Manager has asked you to share your vision for this product.
 Describe clearly what you think this product should be and what its core value is, from your professional perspective.
+${PRODUCT_VISION_AGENT_VISION_TONE[role] || ""}
 Write exactly ${sentenceCount} sentence${sentenceCount === 1 ? "" : "s"}. Be specific and concrete.
 `;
 

@@ -54,7 +54,7 @@ app.post("/api/council/generate-prd", async (req, res) => {
     const result = await callQwen({
       systemPrompt: PRD_GENERATION_SYSTEM_PROMPT,
       userPrompt: PRD_GENERATION_USER_PROMPT({ idea, topicSummaries, decisions: decisions || [] }),
-      maxTokens: 2000,
+      maxTokens: 6000,
     });
 
     const prd = JSON.parse(extractJson(result));
@@ -114,7 +114,8 @@ app.get("/api/council/start", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || "0.0.0.0";
 
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Backend listening on ${HOST}:${PORT}`);
 });

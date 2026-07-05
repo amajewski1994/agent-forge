@@ -30,6 +30,17 @@ const MAX_RESPONSES_PER_AGENT = 4;
 const MIN_REPLIES_PER_TOPIC = 3;
 const MAX_REPLIES_PER_TOPIC = 8;
 
+// Each flow destructures only the args it needs from the shared payload below,
+// so every topic can be dispatched through the same call shape.
+const TOPIC_FLOWS = {
+  "Product Vision": runProductVisionFlow,
+  "MVP Scope": runMvpScopeFlow,
+  "User Experience": runUserExperienceFlow,
+  "Technical Architecture": runTechnicalArchitectureFlow,
+  "Data Model": runDataModelFlow,
+  "Implementation Roadmap": runImplementationRoadmapFlow,
+};
+
 async function runDynamicDiscussion({
   idea,
   topic,
@@ -208,7 +219,7 @@ async function buildCouncilWorkflow(idea, options = {}) {
     type: "message",
   });
 
-  const topicsToRun = agenda.slice(9, 10);
+  const topicsToRun = agenda
 
   if (waitForProceed) {
     sendMessage({
@@ -239,80 +250,22 @@ async function buildCouncilWorkflow(idea, options = {}) {
       });
     }
 
-    let ceoDecision;
-    let conflictData = null;
-    let customStageSummary = null;
-
-    if (topic.title === "Product Vision") {
-      ({ ceoDecision } = await runProductVisionFlow({
-        idea,
-        topic,
-        messages,
-        topicStartIndex,
-        sendMessage,
-      }));
-    } else if (topic.title === "MVP Scope") {
-      ({ ceoDecision, customStageSummary } = await runMvpScopeFlow({
-        idea,
-        resolvedDecisions,
-        messages,
-        topicStartIndex,
-        sendMessage,
-        send,
-        waitForProceed,
-      }));
-    } else if (topic.title === "User Experience") {
-      ({ ceoDecision } = await runUserExperienceFlow({
-        idea,
-        topic,
-        resolvedDecisions,
-        messages,
-        topicStartIndex,
-        sendMessage,
-        send,
-      }));
-    } else if (topic.title === "Technical Architecture") {
-      ({ ceoDecision } = await runTechnicalArchitectureFlow({
-        idea,
-        topic,
-        resolvedDecisions,
-        messages,
-        topicStartIndex,
-        sendMessage,
-        send,
-      }));
-    } else if (topic.title === "Data Model") {
-      ({ ceoDecision } = await runDataModelFlow({
-        idea,
-        topic,
-        resolvedDecisions,
-        messages,
-        topicStartIndex,
-        sendMessage,
-        send,
-      }));
-    } else if (topic.title === "Implementation Roadmap") {
-      ({ ceoDecision } = await runImplementationRoadmapFlow({
-        idea,
-        topic,
-        resolvedDecisions,
-        messages,
-        topicStartIndex,
-        sendMessage,
-        send,
-      }));
-    } else {
-      ({ ceoDecision, conflictData } = await runDynamicDiscussion({
-        idea,
-        topic,
-        messages,
-        topicStartIndex,
-        resolvedTopics,
-        resolvedDecisions,
-        sendMessage,
-        send,
-      }));
-    }
+    const runTopicFlow = TOPIC_FLOWS[topic.title] ?? runDynamicDiscussion;
+    const {
+      ceoDecision,
+      conflictData = null,
+      customStageSummary = null,
+    } = await runTopicFlow({
+      idea,
+      topic,
+      resolvedDecisions,
+      messages,
+      topicStartIndex,
+      resolvedTopics,
+      sendMessage,
+      send,
+      waitForProceed,
+    });
 
     sendMessage({
       agentAbbr: "CEO",

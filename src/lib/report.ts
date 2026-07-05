@@ -1,5 +1,3 @@
-import type { Decision, Conflict } from "@/types";
-
 export interface MvpReport {
   projectName: string;
   productSummary: string;
@@ -13,23 +11,6 @@ export interface MvpReport {
   implementationRoadmap: string[];
   risksAndOpenQuestions: string[];
   decisionLog: Array<{ stage: string; decision: string }>;
-}
-
-export function generateReport(
-  _decisions: Decision[],
-  _conflicts: Conflict[],
-): MvpReport {
-  return {
-    projectName: "MVP Package",
-    productSummary: "",
-    mvpScope: { inMvp: [], postMvp: [] },
-    userFlow: [],
-    architecture: "",
-    dataAndIntegrations: [],
-    implementationRoadmap: [],
-    risksAndOpenQuestions: [],
-    decisionLog: [],
-  };
 }
 
 export function reportToMarkdown(report: MvpReport): string {
