@@ -11,7 +11,7 @@ async function callQwen({ systemPrompt, userPrompt, maxTokens }) {
   }
 
   const response = await client.chat.completions.create({
-    model: process.env.QWEN_MODEL_TEST || "qwen-flash",
+    model: process.env.QWEN_MODEL || "qwen-flash",
     messages: [
       {
         role: "system",
