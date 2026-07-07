@@ -23,7 +23,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-indigo-500/30 shrink-0">
             <Image
-              src="/Agent Forge logo.png"
+              src="/agent-forge/Agent Forge logo.png"
               alt="Agent Forge logo"
               width={32}
               height={32}
