@@ -8,6 +8,7 @@ interface AgentMessageAvatarProps {
 
 export default function AgentMessageAvatar({ agentAbbr, large }: AgentMessageAvatarProps) {
   const style = AGENT_STYLE_MAP[agentAbbr] ?? FALLBACK_STYLE;
+  const BASE_PATH = process.env.NODE_ENV === "production" ? "/agent-forge" : "";
 
   return (
     <div
@@ -17,7 +18,7 @@ export default function AgentMessageAvatar({ agentAbbr, large }: AgentMessageAva
       ].join(" ")}
     >
       <Image
-        src={style.avatar}
+        src={`${BASE_PATH}${style.avatar}`}
         alt={agentAbbr}
         width={36}
         height={36}

@@ -11,6 +11,8 @@ export default function AgentCard({ agent }: AgentCardProps) {
   const isActive = agent.status === "active";
   const isIdle = agent.status === "idle";
 
+  const BASE_PATH = process.env.NODE_ENV === "production" ? "/agent-forge" : "";
+
   return (
     <div
       className={[
@@ -26,7 +28,7 @@ export default function AgentCard({ agent }: AgentCardProps) {
         ].join(" ")}
       >
         <Image
-          src={agent.avatar}
+          src={`${BASE_PATH}${agent.avatar}`}
           alt={agent.name}
           width={40}
           height={40}
