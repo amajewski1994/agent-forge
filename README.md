@@ -81,11 +81,18 @@ Generated output includes:
 - Alibaba Cloud DashScope
 - OpenAI Compatible API
 
-### Deployment
+## Live Deployment
 
-- Frontend (GH pages): https://amajewski1994.github.io/agent-forge/
-- Backend: Alibaba Cloud ECS
-- AI: Alibaba Cloud DashScope (Qwen API)
+The backend is deployed on **Alibaba Cloud ECS** and communicates with **Qwen models** through **Alibaba Cloud DashScope's OpenAI-compatible API**.
+
+**Backend API**
+
+http://47.236.51.15:4000
+
+**Platform**
+
+- Alibaba Cloud ECS
+- Alibaba Cloud DashScope (Qwen API)
 
 ---
 
@@ -96,17 +103,23 @@ Generated output includes:
 ```env
 PORT=4000
 HOST=0.0.0.0
-FRONTEND_URL=https://amajewski1994.github.io
+FRONTEND_URL=http://localhost:3000
 QWEN_API_KEY=YOUR_QWEN_API_KEY
-QWEN_MODEL=qwen_model_name_ex._qwen-plus
+QWEN_MODEL=qwen-plus
 QWEN_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 ```
 
 ### Frontend
 
 ```env
-NEXT_PUBLIC_BACKEND_URL=http://47.236.51.15:4000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 ```
+
+> **Production Deployment**
+>
+> The live backend is deployed on **Alibaba Cloud ECS** and is available at:
+>
+> **http://47.236.51.15:4000**
 
 ---
 
