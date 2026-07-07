@@ -83,8 +83,9 @@ Generated output includes:
 
 ### Deployment
 
-- Backend deployed on Alibaba Cloud ECS
-- Frontend hosted on GitHub Pages
+- Frontend (GH pages): https://amajewski1994.github.io/agent-forge/
+- Backend: Alibaba Cloud ECS
+- AI: Alibaba Cloud DashScope (Qwen API)
 
 ---
 
